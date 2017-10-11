@@ -9,6 +9,7 @@
     "lint:js": "eslint **/*.js **/*.html",
     "lint:polymer": "polymer lint",
     "start": "polymer serve",
+    "preversion": "npm test",
     "pretest": "npm run lint",
     "test": "polymer test"
   },
