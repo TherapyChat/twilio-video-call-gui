@@ -53,4 +53,4 @@ You will need [NodeJS](https://nodejs.org).
 
 ## License
 
-\<twilio-video-call-gui\> is available under the `Apache License 2.0`. See the [LICENSE](./LICENSE) file for more info.
+This project is available under the `Apache License 2.0`. See the [LICENSE](./LICENSE) file for more info.
