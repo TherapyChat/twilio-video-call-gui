@@ -1,11 +1,11 @@
-<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/polymer/polymer.html">
 
-<link rel="import" href="../../../bower_components/iron-overlay-behavior/iron-overlay-behavior.html">
+<link rel="import" href="bower_components/iron-overlay-behavior/iron-overlay-behavior.html">
 
-<link rel="import" href="../../../bower_components/iron-icons/communication-icons.html">
-<link rel="import" href="../../../bower_components/iron-image/iron-image.html">
+<link rel="import" href="bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="bower_components/iron-image/iron-image.html">
 
-<link rel="import" href="../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
 
 <dom-module id="twilio-video-call-gui">
   <template>
@@ -600,6 +600,10 @@
         noCancelOnEscKey: {
           type: Boolean,
           value: true
+        },
+        opened: {
+          type: Boolean,
+          value: false
         },
         pickUpIcon: String,
         remoteVideoDisabled: {
