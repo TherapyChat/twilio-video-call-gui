@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>twilio-video-call-gui test</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../twilio-video-call-gui.html">
+  </head>
+  <body>
+    <test-fixture id="basic">
+      <template>
+        <twilio-video-call-gui></twilio-video-call-gui>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('twilio-video-call-gui', function () {
+        test('instantiating the element works', function () {
+          var element = fixture('basic')
+          assert.equal(element.is, 'twilio-video-call-gui')
+        })
+      })
+    </script>
+  </body>
+</html>

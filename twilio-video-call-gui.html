@@ -1,0 +1,914 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../../bower_components/iron-overlay-behavior/iron-overlay-behavior.html">
+
+<link rel="import" href="../../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../../bower_components/iron-image/iron-image.html">
+
+<link rel="import" href="../../../bower_components/paper-icon-button/paper-icon-button.html">
+
+<dom-module id="twilio-video-call-gui">
+  <template>
+    <style>
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      :host {
+        color: var(--dark-theme-text-color, #ffffff);
+        display: block;
+        font-size: 1rem;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      video {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
+
+      [hidden] {
+        display: none;
+        visibility: hidden;
+      }
+
+      :host([opened]) {
+        background-color: var(--dark-theme-background-color, #000000);
+        /* iron-overlay apply display: none; sometimes when user clicks constantly
+         * on the screen during open process, this prevent overlay to be hidden
+         * on that case
+         */
+        display: block !important;
+        height: 100%;
+        width: 100%;
+        z-index: 100;
+      }
+
+      .header {
+        align-items: center;
+        display: flex;
+        flex-direction: row;
+        font-size: 1.25em;
+        height: var(--app-toolbar-height, 60px);
+        left: 0;
+        margin-top: 1em;
+        opacity: 1;
+        padding: 0 1em;
+        pointer-events: none;
+        position: absolute;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        top: 0;
+        transition-duration: .2s;
+        transition-property: background-color, margin-top, opacity, text-shadow, top;
+        transition-timing-function: ease;
+        width: 100%;
+        z-index: 2;
+      }
+
+      .header__avatar {
+        display: none;
+        height: calc(var(--app-toolbar-height, 60px) - 20px);
+        margin-right: .65em;
+        visibility: hidden;
+        width: calc(var(--app-toolbar-height, 60px) - 20px);
+      }
+
+      .header__avatar:empty {
+        display: none;
+        visibility: hidden;
+      }
+
+      .header__avatar > * {
+        height: 100%;
+        width: 100%;
+      }
+
+      .header__title {
+        font-weight: 600;
+      }
+
+      #videoCallMedia {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #videoCallLocalMedia video {
+        transform: scale3d(-1, 1, 1);
+      }
+
+      .media {
+        height: auto;
+        max-height: 160px;
+        max-width: 100px;
+        position: absolute;
+        right: 18px;
+        top: 21px;
+        transition-duration: .2s;
+        transition-property: top, left, right, max-width, max-height;
+        transition-timing-function: ease;
+        z-index: 2;
+      }
+
+      .media video,
+      .media .media__avatar {
+        border-radius: 4px;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .1);
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      .media__avatar {
+        left: 0;
+        position: absolute;
+        top: 0;
+        transform: scale3d(1.05, 1.05, 1);
+        transition: opacity .2s ease;
+        z-index: 1;
+      }
+
+      .media__avatar > * {
+        height: 100%;
+        width: 100%;
+      }
+
+      .media__avatar[hidden] {
+        display: block;
+        visibility: visible;
+        opacity: 0;
+      }
+
+      /* .media full screen mode */
+
+      .media[full-screen] {
+        height: 100%;
+        max-height: 100%;
+        max-width: 100%;
+        right: 0;
+        top: 0;
+        width: 100%;
+        z-index: 0;
+      }
+
+      .media[full-screen] video,
+      .media[full-screen] .media__avatar {
+        box-shadow: none;
+      }
+
+      .media:not([full-screen]):empty {
+        display: none;
+      }
+
+      .media-veil {
+        background: var(--twilio-video-media-veil-background, linear-gradient(182deg, rgba(4, 4, 4, .2), rgba(22, 22, 22, 0.0) 50%, rgba(0, 0, 0, .25)));
+        height: 100%;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+        z-index: 1;
+      }
+
+      .remote-notifications {
+        align-items: center;
+        bottom: 150px;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        left: 0;
+        position: absolute;
+        text-align: center;
+        width: 100%;
+        transition: bottom .2s ease;
+        z-index: 2;
+      }
+
+      .remote-notifications .remote-notifications__item {
+        background-color: rgba(0, 0, 0, .45);
+        border-radius: 10px;
+        margin: 0 1em 0;
+        padding: 10px 13px;
+        opacity: 1;
+        transition: opacity .2s ease;
+      }
+
+      .remote-notifications .remote-notifications__item:not(:last-child) {
+        margin-bottom: 1em;
+      }
+
+      .remote-notifications .remote-notifications__item[hidden] {
+        display: block;
+        visibility: visible;
+        opacity: 0;
+      }
+
+      .actions {
+        align-items: center;
+        background-color: rgba(255, 255, 255, .2);
+        bottom: 0;
+        display: flex;
+        flex-direction: row;
+        height: 54px;
+        justify-content: space-around;
+        left: 0;
+        opacity: 1;
+        position: absolute;
+        transition-duration: .2s;
+        transition-property: background-color, margin-bottom, bottom, opacity;
+        transition-timing-function: ease;
+        width: 100%;
+        z-index: 2;
+      }
+
+      .actions__action-item {
+        position: relative;
+      }
+
+      .actions__action-tooltip {
+        position: absolute;
+        top: -80px;
+        text-align: center;
+        background-color: var(--twilio-video-action-tooltip-background, rgba(0, 0, 0, .45));
+        border-radius: 8px;
+        padding: 8px 13px;
+      }
+
+      .actions__action-tooltip::after {
+        content: '';
+        display: block;
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 14px solid var(--twilio-video-action-tooltip-background, rgba(0, 0, 0, .45));
+        position: absolute;
+        bottom: -14px;
+      }
+
+      .actions__action-tooltip:not([hidden]) {
+        animation-name: fadeInOut;
+        animation-duration: 1.5s;
+        animation-fill-mode: forwards;
+      }
+
+      .actions__action-tooltip.actions__action-tooltip_video {
+        left: 0;
+        width: 200px;
+      }
+
+      .actions__action-tooltip.actions__action-tooltip_video::after {
+        left: 17px;
+      }
+
+      .actions__action-tooltip.actions__action-tooltip_audio {
+        right: 0;
+        width: 230px;
+      }
+
+      .actions__action-tooltip.actions__action-tooltip_audio::after {
+        right: 17px;
+      }
+
+      .actions .actions__action-button {
+        border-radius: 50%;
+        flex: 0 0 auto;
+        height: 54px;
+        padding: .8em;
+        position: relative;
+        transition-property: padding;
+        transition-duration: .2s;
+        transition-timing-function: ease;
+        width: 54px;
+      }
+
+      .actions .actions__action-button:hover {
+        padding: .5em;
+      }
+
+      .actions .actions__action-button:active,
+      .actions .actions__action-button.actions__pick-up:active,
+      .actions .actions__action-button.actions__hang-up:active {
+        padding: 1.2em;
+      }
+
+      .actions .actions__action-button[disabled] {
+        opacity: .48;
+      }
+
+      .actions .actions__action-button.actions__pick-up,
+      .actions .actions__action-button.actions__hang-up {
+        height: 68px;
+        width: 68px;
+        transition-property: opacity, padding, top;
+      }
+
+      .actions .actions__action-button.actions__hang-up {
+        padding: .8em;
+      }
+
+      .actions .actions__action-button.actions__pick-up {
+        background-color: var(--transparent-turquoise-500, rgba(99, 219, 193, .85));
+        padding: 1.15em;
+        top: -35%;
+      }
+
+      .actions .actions__action-button.actions__pick-up:hover {
+        background-color: var(--turquoise-500, #63dbc1);
+      }
+
+      .actions .actions__action-button.actions__hang-up {
+        background-color: var(--transparent-red-500, rgba(245, 75, 94, .85));
+        top: -35%;
+      }
+
+      .actions .actions__action-button.actions__hang-up:hover {
+        background-color: var(--red-500, #f54b5e);
+      }
+
+      :host(:not([is-in-progress])) .actions {
+        bottom: 100px;
+        background-color: transparent;
+      }
+
+      :host(:not([is-in-progress])) .actions {
+        justify-content: center;
+      }
+
+      :host(:not([is-in-progress])) .actions .actions__action-button.actions__pick-up {
+        margin-left: 25vw;
+      }
+
+      /* Hidden GUI mode */
+
+      :host([hide-gui]) .header {
+        top: -160px;
+        opacity: 0;
+      }
+
+      :host([hide-gui]) .remote-notifications {
+        bottom: 40px;
+      }
+
+      :host([hide-gui]) .actions {
+        bottom: -80px;
+        opacity: 0;
+      }
+
+      @media (min-width: 600px) {
+        .header {
+          background-color: rgba(75, 75, 75, .7);
+          letter-spacing: .5px;
+          margin-top: 0;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+        }
+
+        .header__avatar {
+          display: block;
+          visibility: visible;
+        }
+
+        .media {
+          max-height: 260px;
+          max-width: 174px;
+          right: 26px;
+          top: calc(33px + var(--app-toolbar-height, 60px));
+        }
+
+        .remote-notifications {
+          bottom: calc(8vh + 160px);
+        }
+
+        .actions {
+          background-color: transparent;
+          bottom: 8vh;
+          height: 68px;
+          justify-content: space-between;
+          left: 50%;
+          max-width: 400px;
+          transform: translate3d(-50%, 0, 0);
+        }
+
+        .actions .actions__action-button {
+          background-color: var(--transparent-white);
+          height: 68px;
+          padding: 20px;
+          top: 0;
+          width: 68px;
+        }
+
+        .actions .actions__action-button:hover {
+          padding: 16px;
+        }
+
+        .actions .actions__action-button:active,
+        .actions .actions__action-button.actions__pick-up:active,
+        .actions .actions__action-button.actions__hang-up:active {
+          padding: 1.6em;
+        }
+
+        .actions .actions__action-button.actions__hang-up,
+        .actions .actions__action-button.actions__pick-up {
+          top: 0;
+        }
+
+        .actions .actions__action-button.actions__hang-up {
+          padding: 13px;
+        }
+
+        .actions .actions__action-button.actions__pick-up {
+          padding: 20px;
+        }
+
+        :host(:not([is-in-progress])) .actions .actions__action-button.actions__pick-up {
+          margin-left: 125px;
+        }
+
+        /* Hidden GUI mode */
+
+        :host([hide-gui]) .media:not([full-screen]) {
+          top: 30px;
+        }
+
+        :host([hide-gui]) .remote-notifications {
+          bottom: 60px;
+        }
+      }
+    </style>
+
+    <div class="header">
+      <div id="roomAvatarContainer" class="header__avatar">
+        <template is="dom-if" if="[[roomAvatarSrc]]">
+          <iron-image
+            class="header__avatar-image"
+            sizing="cover"
+            src="[[roomAvatarSrc]]"
+          ></iron-image>
+        </template>
+      </div>
+      <div class="header__info">
+        <div class="header__title">
+          [[_computeTitle(isIncomingCall, isInProgress)]]
+        </div>
+        <div class="header__subtitle">
+          [[_computeSubtitle(isIncomingCall, isInProgress, roomTitle, duration)]]
+        </div>
+      </div>
+    </div>
+
+    <div id="videoCallMedia">
+      <div
+        id="videoCallRemoteMedia"
+        class="media"
+        on-tap="_onTapMedia"
+      >
+        <div
+          id="remoteAvatar"
+          class="media__avatar"
+          hidden$="[[!remoteVideoDisabled]]"
+        ></div>
+      </div>
+      <div
+        id="videoCallLocalMedia"
+        class="media"
+        on-tap="_onTapMedia"
+      >
+        <div
+          id="localAvatar"
+          class="media__avatar"
+          hidden$="[[_computeLocalAvatarHidden(opened, isInProgress, localVideoDisabled, localTracks)]]"
+        ></div>
+      </div>
+      <div class="media-veil"></div>
+    </div>
+
+    <div class="remote-notifications">
+      <div class="remote-notifications__item"
+        hidden$="[[!remoteVideoDisabled]]"
+      >[[roomTitle]] ha apagado la cámara</div>
+      <div class="remote-notifications__item"
+        hidden$="[[!remoteAudioDisabled]]"
+      >[[roomTitle]] ha silenciado el micrófono</div>
+    </div>
+
+    <div class="actions">
+      <div class="actions__action-item">
+        <div class="actions__action-tooltip actions__action-tooltip_video"
+          hidden$="[[!localVideoDisabled]]"
+        >Has apagado tu cámara</div>
+        <paper-icon-button
+        class="actions__action-button"
+        src="[[_computeDisableableIcon(localVideoDisabled, enabledVideoIcon, disabledVideoIcon)]]"
+        on-tap="_onTapDisableVideo"
+        hidden$="[[_computeVideoCallControlsHidden(isInProgress)]]"
+        ></paper-icon-button>
+      </div>
+      <paper-icon-button
+        class="actions__action-button actions__hang-up"
+        src="[[hangUpIcon]]"
+        on-tap="_onTapHangUp"
+        disabled$="[[disabled]]"
+      ></paper-icon-button>
+      <paper-icon-button
+        class="actions__action-button actions__pick-up"
+        src="[[pickUpIcon]]"
+        on-tap="_onTapPickUp"
+        hidden$="[[_computePickUpButtonHidden(isIncomingCall, isInProgress)]]"
+        disabled$="[[disabled]]"
+      ></paper-icon-button>
+      <div class="actions__action-item">
+        <div class="actions__action-tooltip actions__action-tooltip_audio"
+          hidden$="[[!localAudioDisabled]]"
+        >Has silenciado el micrófono</div>
+        <paper-icon-button
+          class="actions__action-button"
+          src="[[_computeDisableableIcon(localAudioDisabled, enabledAudioIcon, disabledAudioIcon)]]"
+          on-tap="_onTapDisableAudio"
+          hidden$="[[_computeVideoCallControlsHidden(isInProgress)]]"
+        ></paper-icon-button>
+      </div>
+    </div>
+
+  </template>
+  <script>
+    /* global moment */
+    Polymer({
+      is: 'twilio-video-call-gui',
+
+      behaviors: [
+        Polymer.IronOverlayBehavior
+      ],
+
+      properties: {
+        duration: {
+          type: Number,
+          value: 0
+        },
+        disabled: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
+        },
+        disabledAudioIcon: String,
+        disabledVideoIcon: String,
+        enabledAudioIcon: String,
+        enabledVideoIcon: String,
+        hangUpIcon: String,
+        hideGui: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
+        },
+        isIncomingCall: {
+          type: Boolean,
+          value: false
+        },
+        isInProgress: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
+        },
+        localAudioDisabled: {
+          type: Boolean,
+          value: false
+        },
+        localTracks: {
+          type: Object,
+          observer: '_handleLocalTracksChanged'
+        },
+        localVideoDisabled: {
+          type: Boolean,
+          value: false
+        },
+        noCancelOnEscKey: {
+          type: Boolean,
+          value: true
+        },
+        pickUpIcon: String,
+        remoteVideoDisabled: {
+          type: Boolean,
+          value: false
+        },
+        remoteAudioDisabled: {
+          type: Boolean,
+          value: false
+        },
+        room: {
+          type: Object,
+          observer: '_handleRoomChanged'
+        },
+        roomAvatarSrc: String,
+        roomName: {
+          type: String,
+          value: ''
+        },
+        roomTitle: {
+          type: String,
+          value: ''
+        },
+        _startDate: {
+          type: Number,
+          computed: '_computeStartDate(isInProgress)',
+          observer: '_handleStartDateChanged'
+        }
+      },
+
+      observers: [
+        '_handleOpenedChanged(opened)',
+        '_handleFullScreenAutoChanges(opened, isInProgress)'
+      ],
+
+      // Public functions
+
+      get roomAvatarContainer () {
+        return this.$.roomAvatarContainer
+      },
+
+      get localAvatarContainer () {
+        return this.$.localAvatar
+      },
+
+      get remoteAvatarContainer () {
+        return this.$.remoteAvatar
+      },
+
+      attached: function () {
+        this.addEventListener('iron-resize', this._onIronResize.bind(this))
+      },
+
+      detached: function () {
+        this.removeEventListener('iron-resize', this._onIronResize)
+      },
+
+      pickUp: function () {
+        this.fire('video-call-pick-up', {
+          roomName: this.roomName
+        })
+      },
+
+      hangUp: function () {
+        this.fire('video-call-hang-up', {
+          roomName: this.roomName,
+          rejected: !this.isInProgress && this.isIncomingCall
+        })
+      },
+
+      _computeDurationDebounced: function () {
+        if (this._startDate) {
+          this.debounce('computeDuration', function () {
+            this.duration = Date.now() - this._startDate
+            this._computeDurationDebounced()
+          }, 1000)
+        } else if (this.isDebouncerActive('computeDuration')) {
+          this.cancelDebouncer('computeDuration')
+        }
+      },
+
+      _formatDuration: function (duration) {
+        return moment.utc(duration || 0).format('HH:mm:ss')
+      },
+
+      _handleFullScreenAutoChanges: function (opened, isInProgress) {
+        if (opened) {
+          if (!this.isInProgress) {
+            this._setMediaFullScreen(this.$.videoCallLocalMedia)
+          } else {
+            this._setMediaFullScreen(this.$.videoCallRemoteMedia)
+          }
+        }
+      },
+
+      _handleOpenedChanged: function (opened) {
+        if (!opened) {
+          this._resetGui()
+        }
+      },
+
+      _handleRoomChanged: function (room) {
+        this._setupRoom(room)
+      },
+
+      _handleStartDateChanged: function (startDate) {
+        if (startDate) {
+          this._computeDurationDebounced()
+        }
+      },
+
+      _mountTracks: function (tracks, el) {
+        tracks.forEach(function (track) {
+          console.log('[twilio-video-call-gui] mounting track', track, el)
+          Polymer.dom(el).appendChild(track.attach())
+        }, this)
+      },
+
+      _unmountTracks: function (tracks, el) {
+        tracks.forEach(function (track) {
+          console.log('[twilio-video-call-gui] unmounting track', track, el)
+          track.detach().forEach(function (detachedEl) {
+            detachedEl.remove()
+          })
+        }, this)
+      },
+
+      _resetGui: function () {
+        this.hideGui = this.properties.hideGui.value
+        this.localAudioDisabled = this.properties.localAudioDisabled.value
+        this.localVideoDisabled = this.properties.localVideoDisabled.value
+        this.remoteAudioDisabled = this.properties.remoteAudioDisabled.value
+        this.remoteVideoDisabled = this.properties.remoteVideoDisabled.value
+        Polymer.dom(this.localAvatarContainer).innerHTML = ''
+        Polymer.dom(this.remoteAvatarContainer).innerHTML = ''
+        Polymer.dom(this.roomAvatarContainer).innerHTML = ''
+      },
+
+      _setMediaFullScreen: function (mediaEl) {
+        var allMediaElements = Polymer.dom(this.$.videoCallMedia).children
+
+        allMediaElements.forEach(function (el) {
+          el.removeAttribute('full-screen')
+        })
+
+        mediaEl.setAttribute('full-screen', '')
+      },
+
+      _setupRoom: function (room) {
+        if (room) {
+          console.log('[twilio-video-call-gui] setting up room', room)
+          room.on('disconnected', this._onRoomDisconnected.bind(this))
+          room.on('participantConnected', this._onParticipantConnected.bind(this))
+          room.on('participantDisconnected', this._onParticipantDisconnected.bind(this))
+          room.on('trackAdded', this._onRemoteTrackAdded.bind(this))
+          room.on('trackRemoved', this._onRemoteTrackRemoved.bind(this))
+          room.on('trackDisabled', this._onTrackEnabledChanged.bind(this))
+          room.on('trackEnabled', this._onTrackEnabledChanged.bind(this))
+        }
+      },
+
+      _handleLocalTracksChanged: function (localTracks, removedLocalTracks) {
+        console.log('[twilio-video-call-gui] handle localtracks', localTracks)
+        if (localTracks) {
+          this._mountTracks(localTracks, this.$.videoCallLocalMedia)
+        } else if (removedLocalTracks) {
+          this._unmountTracks(removedLocalTracks, this.$.videoCallLocalMedia)
+        }
+      },
+
+      // Room events callbacks
+
+      _onRoomDisconnected: function (room, err) {
+        if (err) console.error('[twilio-video-call-gui] room disconnect error', err)
+
+        console.log('[twilio-video-call-gui] room disconnected', room)
+        this._unmountTracks(room.localParticipant.tracks, this.$.videoCallLocalMedia)
+        room.participants.forEach(function (participant) {
+          this._unmountTracks(participant.tracks, this.$.videoCallRemoteMedia)
+        }, this)
+        this._resetGui()
+      },
+
+      _onParticipantConnected: function (participant) {
+        console.log('[twilio-video-call-gui] participant connected', participant)
+      },
+
+      _onParticipantDisconnected: function (participant) {
+        console.log('[twilio-video-call-gui] participant disconnected', participant)
+        this._unmountTracks(participant.tracks, this.$.videoCallRemoteMedia)
+      },
+
+      _onRemoteTrackAdded: function (track, participant) {
+        console.log('[twilio-video-call-gui]', participant.identity, 'added track:', participant, track)
+        this._mountTracks([track], this.$.videoCallRemoteMedia)
+      },
+
+      _onRemoteTrackRemoved: function (track, participant) {
+        console.log('[twilio-video-call-gui]', participant.identity, 'removed track:', participant, track)
+        this._unmountTracks([track], this.$.videoCallRemoteMedia)
+      },
+
+      _onTrackEnabledChanged: function (track, participant) {
+        console.log('[twilio-video-call-gui] track enabled changed', track, participant)
+
+        switch (track.kind) {
+          case 'video':
+            this.remoteVideoDisabled = !track.isEnabled
+            break
+          case 'audio':
+            this.remoteAudioDisabled = !track.isEnabled
+            break
+          default:
+        }
+      },
+
+      // Events Callbacks
+
+      _onIronResize: function () {
+        // ensures correct layout with phone keyboard changes
+        this.fit()
+        this.async(function () {
+          this.fit()
+        }, 500)
+      },
+
+      _onTapDisableAudio: function (ev, detail) {
+        var audioTrack
+
+        if (this.localTracks && this.localTracks.length) {
+          audioTrack = this.localTracks.find(function (track) {
+            return track.kind === 'audio'
+          })
+
+          audioTrack.enable(!audioTrack.isEnabled)
+
+          this.localAudioDisabled = !audioTrack.isEnabled
+        }
+      },
+
+      _onTapDisableVideo: function (ev, detail) {
+        var videoTrack
+
+        if (this.localTracks && this.localTracks.length) {
+          videoTrack = this.localTracks.find(function (track) {
+            return track.kind === 'video'
+          })
+
+          videoTrack.enable(!videoTrack.isEnabled)
+
+          this.localVideoDisabled = !videoTrack.isEnabled
+        }
+      },
+
+      _onTapHangUp: function (ev, detail) {
+        this.hangUp()
+      },
+
+      _onTapMedia: function (ev, detail) {
+        var tapedEl = ev.currentTarget
+
+        if (this.isInProgress) {
+          if (tapedEl.hasAttribute('full-screen')) {
+            this.hideGui = !this.hideGui
+          } else {
+            this._setMediaFullScreen(tapedEl)
+          }
+        }
+      },
+
+      _onTapPickUp: function (ev, detail) {
+        this.pickUp()
+      },
+
+      // Computed Callbacks
+
+      _computeDisableableIcon: function (disabled, enabledIcon, disabledIcon) {
+        var iconSrc = disabled ? disabledIcon : enabledIcon
+
+        return iconSrc
+      },
+
+      _computeLocalAvatarHidden: function (opened, isInProgress, localVideoDisabled, localTracks) {
+        return (isInProgress ? !localVideoDisabled : !!(localTracks))
+      },
+
+      _computePickUpButtonHidden: function (isIncomingCall, isInProgress) {
+        return (!isIncomingCall || isInProgress)
+      },
+
+      _computeStartDate: function (isInProgress) {
+        return isInProgress ? Date.now() : undefined
+      },
+
+      _computeSubtitle: function (isIncomingCall, isInProgress, roomTitle, duration) {
+        return isInProgress
+          ? this._formatDuration(duration)
+          : (isIncomingCall ? roomTitle : 'llamando a ' + roomTitle + '...')
+      },
+
+      _computeTitle: function (isIncomingCall, isInProgress) {
+        return (isIncomingCall && !isInProgress)
+          ? 'Videollamada entrante'
+          : 'Videollamada'
+      },
+
+      _computeVideoCallControlsHidden: function (isInProgress) {
+        return !isInProgress
+      }
+    })
+  </script>
+</dom-module>
