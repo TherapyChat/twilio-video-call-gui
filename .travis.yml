@@ -21,6 +21,7 @@ cache:
   - bower_components
 before_script:
 - npm install -g polymer-cli
+- polymer install --variants
 - polymer lint
 script:
 - xvfb-run polymer test
