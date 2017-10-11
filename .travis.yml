@@ -20,10 +20,9 @@ cache:
   - node_modules
   - bower_components
 before_script:
-- npm install -g bower polylint web-component-tester
-- bower install
-- polylint
+- npm install -g polymer-cli
+- polymer lint
 script:
-- xvfb-run wct
-- if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then wct --plugin sauce --skip-plugin
-  local; fi
+- xvfb-run polymer test
+- if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then polymer test -s 'default';
+  fi
