@@ -18,10 +18,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git://github.com/TherapyChat/twilio-video-call.git"
+    "url": "git://github.com/TherapyChat/twilio-video-call-gui.git"
   },
   "license": "Apache-2.0",
-  "homepage": "https://github.com/TherapyChat/twilio-video-call",
+  "homepage": "https://github.com/TherapyChat/twilio-video-call-gui",
   "dependencies": {
     "polymer": "polymer/polymer#^1.9.2",
     "iron-overlay-behavior": "PolymerElements/iron-overlay-behavior#^1.0.0",
