@@ -1,7 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
 
-<link rel="import" href="moment-script.html">
-
 <link rel="import" href="../iron-overlay-behavior/iron-overlay-behavior.html">
 
 <link rel="import" href="../iron-icons/communication-icons.html">
@@ -550,7 +548,6 @@
 
   </template>
   <script>
-    /* global moment */
     Polymer({
       is: 'twilio-video-call-gui',
 
@@ -687,8 +684,12 @@
         }
       },
 
-      _formatDuration: function (duration) {
-        return moment.utc(duration || 0).format('HH:mm:ss')
+      _formatDuration: function (durationInMilliseconds) {
+        var durationInSeconds = Math.floor(durationInMilliseconds / 1000)
+        var hours = Math.floor(durationInSeconds / 3600)
+        var minutes = Math.floor((durationInSeconds % 3600) / 60)
+        var seconds = durationInSeconds % 60
+        return this._padLeft(hours) + ':' + this._padLeft(minutes) + ':' + this._padLeft(seconds)
       },
 
       _handleFullScreenAutoChanges: function (opened, isInProgress) {
@@ -914,6 +915,18 @@
 
       _computeVideoCallControlsHidden: function (isInProgress) {
         return !isInProgress
+      },
+
+      // Helpers
+
+      _padLeft: function (value, length, chars) {
+        chars = chars === undefined ? '0' : '' + chars
+        length = length === undefined ? 2 : length
+        value = value === undefined ? '' : '' + value
+        while (value.length < length && chars.length > 0) {
+          value = chars + value
+        }
+        return value.substr(-length)
       }
     })
   </script>
