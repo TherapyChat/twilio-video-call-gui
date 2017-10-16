@@ -5,7 +5,7 @@
   "main": "twilio-video-call-gui.html",
   "scripts": {
     "build": "polymer build",
-    "install": "bower install --allow-root",
+    "postinstall": "bower install --allow-root",
     "lint": "npm run lint:js && npm run lint:polymer",
     "lint:js": "eslint **/*.js **/*.html",
     "lint:polymer": "polymer lint",
