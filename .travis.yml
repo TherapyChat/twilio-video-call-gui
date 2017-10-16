@@ -20,7 +20,7 @@ cache:
   - node_modules
   - bower_components
 before_script:
-- npm install -g polymer-cli bower
+- npm install -g polymer-cli
 - polymer install --variants
 - polymer lint
 script:
