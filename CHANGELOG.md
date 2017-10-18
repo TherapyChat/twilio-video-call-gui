@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## [UNRELEASED]
+### Removed
+- `prepublishOnly` script.
+
+
+
+
+
+
 ## v1.0.6 - 2017-10-18
 ### Added
 - `prepublishOnly` script to upload repo before publish

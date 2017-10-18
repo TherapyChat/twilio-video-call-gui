@@ -13,8 +13,7 @@
     "test": "polymer test",
     "preversion": "npm test",
     "version": "npm run version:changelog && git add CHANGELOG.md",
-    "version:changelog": "node .scripts/version.js",
-    "prepublishOnly:": "git push && git push --tags"
+    "version:changelog": "node .scripts/version.js"
   },
   "repository": {
     "type": "git",
