@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
-## [UNRELEASED]
+## v1.0.5 - 2017-10-18
 ### Added
 - Now the project has a script to version the changelog properly when `npm version` runs
 - New contributor [Miguel del Mazo](https://github.com/migueldelmazo)
