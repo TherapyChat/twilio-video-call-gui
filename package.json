@@ -9,11 +9,12 @@
     "lint:js": "eslint **/*.js **/*.html",
     "lint:polymer": "polymer lint",
     "start": "polymer serve",
+    "pretest": "npm run lint",
+    "test": "polymer test",
     "preversion": "npm test",
     "version": "npm run version:changelog && git add CHANGELOG.md",
     "version:changelog": "node .scripts/version.js",
-    "pretest": "npm run lint",
-    "test": "polymer test"
+    "prepublishOnly:": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
