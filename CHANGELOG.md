@@ -17,8 +17,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## [UNRELEASED]
+### Added
+- Now the project has a script to version the changelog properly when `npm version` runs
+- New contributor [Miguel del Mazo](https://github.com/migueldelmazo)
+### Changed
+- Now bower.json file doesn't have version property
 
-## 1.0.0
+
+
+
+## v1.0.4
+### Removed
+- MomentJS dependency
+
+
+
+
+## v1.0.0
 
 ### Added
 
