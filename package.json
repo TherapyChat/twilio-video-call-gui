@@ -10,6 +10,8 @@
     "lint:polymer": "polymer lint",
     "start": "polymer serve",
     "preversion": "npm test",
+    "version": "npm run version:changelog && git add CHANGELOG.md",
+    "version:changelog": "node .scripts/version.js",
     "pretest": "npm run lint",
     "test": "polymer test"
   },
