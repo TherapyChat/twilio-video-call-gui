@@ -49,7 +49,8 @@ You will need [NodeJS](https://nodejs.org).
 
 ### Contributors
 
-- [Alberto Fernandez](http://twitter.com/albertofdzm)
+- [Alberto Fernandez](https://github.com/AlbertoFdzM)
+- [Miguel del Mazo](https://github.com/migueldelmazo)
 
 ## License
 
