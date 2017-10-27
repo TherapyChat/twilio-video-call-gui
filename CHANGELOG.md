@@ -16,11 +16,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+
 ## [UNRELEASED]
+### BREAKING CHANGES
+- Refactor how whole component works
+### Added
+- New child element `twilio-video-participant-gui` to handle participants logic
+### Changed
+- Now the elements use slots to allow avatars injection
 ### Removed
 - `prepublishOnly` script.
-
-
 
 
 
