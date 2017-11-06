@@ -24,5 +24,5 @@ before_script:
 - polymer install --variants
 - polymer lint
 script:
-- xvfb-run polymer test
+- polymer test
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then polymer test -s 'default'; fi
