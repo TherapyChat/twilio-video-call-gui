@@ -7,6 +7,8 @@
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
+<link rel="import" href="twilio-video-participant-gui.html">
+
 <dom-module id="twilio-video-call-gui">
   <template>
     <style>
@@ -79,7 +81,7 @@
         z-index: 2;
       }
 
-      .header__avatar {
+      .header__image {
         display: none;
         height: calc(var(--app-toolbar-height, 60px) - 20px);
         margin-right: .65em;
@@ -87,12 +89,12 @@
         width: calc(var(--app-toolbar-height, 60px) - 20px);
       }
 
-      .header__avatar:empty {
+      .header__image:empty {
         display: none;
         visibility: hidden;
       }
 
-      .header__avatar > * {
+      .header__image > * {
         height: 100%;
         width: 100%;
       }
@@ -107,6 +109,16 @@
         left: 0;
         height: 100%;
         width: 100%;
+      }
+
+      .media-preview {
+        height: 100%;
+        width: 100%;
+      }
+
+      .media-preview ::slotted(*) {
+        width: 100%;
+        height: 100%;
       }
 
       #videoCallLocalMedia video {
@@ -158,6 +170,7 @@
       /* .media full screen mode */
 
       .media[full-screen] {
+        background-color: var(--dark-theme-background-color, #000000);
         height: 100%;
         max-height: 100%;
         max-width: 100%;
@@ -380,7 +393,7 @@
           text-shadow: 0 2px 4px rgba(0, 0, 0, .1);
         }
 
-        .header__avatar {
+        .header__image {
           display: block;
           visibility: visible;
         }
@@ -454,14 +467,15 @@
     </style>
 
     <div class="header">
-      <div id="roomAvatarContainer" class="header__avatar">
-        <template is="dom-if" if="[[roomAvatarSrc]]">
+      <div id="roomImageContainer" class="header__image">
+        <template is="dom-if" if="[[roomImageSrc]]">
           <iron-image
-            class="header__avatar-image"
-            sizing="cover"
-            src="[[roomAvatarSrc]]"
+          class="header__image-element"
+          sizing="cover"
+          src="[[roomImageSrc]]"
           ></iron-image>
         </template>
+        <slot name="roomImage"></slot>
       </div>
       <div class="header__info">
         <div class="header__title">
@@ -474,28 +488,35 @@
     </div>
 
     <div id="videoCallMedia">
-      <div
-        id="videoCallRemoteMedia"
-        class="media"
-        on-tap="_onTapMedia"
-      >
-        <div
-          id="remoteAvatar"
-          class="media__avatar"
-          hidden$="[[!remoteVideoDisabled]]"
-        ></div>
+
+      <div class="media-preview">
+        <slot name="previewImage"></slot>
       </div>
-      <div
-        id="videoCallLocalMedia"
-        class="media"
-        on-tap="_onTapMedia"
+
+      <template
+        id="participantsTemplate"
+        is="dom-repeat"
+        items="[[participants]]"
+        as="participant"
+        on-dom-change="_onParticipantsDomChange"
       >
-        <div
-          id="localAvatar"
-          class="media__avatar"
-          hidden$="[[_computeLocalAvatarHidden(opened, isInProgress, localVideoDisabled, localTracks)]]"
-        ></div>
-      </div>
+        <twilio-video-participant-gui
+          class="media"
+          participant="{{participant}}"
+          is-local="{{participant.isLocal}}"
+          full-screen$="{{_computeParticipantFullScreen(participant, fullScreenParticipant)}}"
+          on-tap="_onTapMedia"
+          on-has-audio-disabled-changed="_onParticipantAudioDisabledChanged"
+          on-has-video-disabled-changed="_onParticipantVideoDisabledChanged"
+        >
+      </template>
+
+      <array-selector
+        id="fullScreenSelector"
+        items="{{participants}}"
+        selected="{{fullScreenParticipant}}"
+      ></array-selector>
+
       <div class="media-veil"></div>
     </div>
 
@@ -569,6 +590,7 @@
         disabledVideoIcon: String,
         enabledAudioIcon: String,
         enabledVideoIcon: String,
+        fullScreenParticipant: Object,
         hangUpIcon: String,
         hideGui: {
           type: Boolean,
@@ -588,9 +610,9 @@
           type: Boolean,
           value: false
         },
-        localTracks: {
+        localParticipant: {
           type: Object,
-          observer: '_handleLocalTracksChanged'
+          value: undefined
         },
         localVideoDisabled: {
           type: Boolean,
@@ -605,6 +627,12 @@
           value: false
         },
         pickUpIcon: String,
+        participants: {
+          type: Array,
+          value: function () {
+            return []
+          }
+        },
         remoteVideoDisabled: {
           type: Boolean,
           value: false
@@ -617,7 +645,7 @@
           type: Object,
           observer: '_handleRoomChanged'
         },
-        roomAvatarSrc: String,
+        roomImageSrc: String,
         roomName: {
           type: String,
           value: ''
@@ -634,23 +662,10 @@
       },
 
       observers: [
-        '_handleOpenedChanged(opened)',
-        '_handleFullScreenAutoChanges(opened, isInProgress)'
+        '_handleOpenedChanged(opened)'
       ],
 
       // Public functions
-
-      get roomAvatarContainer () {
-        return this.$.roomAvatarContainer
-      },
-
-      get localAvatarContainer () {
-        return this.$.localAvatar
-      },
-
-      get remoteAvatarContainer () {
-        return this.$.remoteAvatar
-      },
 
       attached: function () {
         this.addEventListener('iron-resize', this._onIronResize.bind(this))
@@ -684,6 +699,10 @@
         }
       },
 
+      _computeParticipantFullScreen: function (participant, fullScreenParticipant) {
+        return this.$.fullScreenSelector.isSelected(participant)
+      },
+
       _formatDuration: function (durationInMilliseconds) {
         var durationInSeconds = Math.floor(durationInMilliseconds / 1000)
         var hours = Math.floor(durationInSeconds / 3600)
@@ -692,13 +711,18 @@
         return this._padLeft(hours) + ':' + this._padLeft(minutes) + ':' + this._padLeft(seconds)
       },
 
-      _handleFullScreenAutoChanges: function (opened, isInProgress) {
+      _checkFullScreenAutoChanges: function (opened, isInProgress) {
         if (opened) {
-          if (!this.isInProgress) {
-            this._setMediaFullScreen(this.$.videoCallLocalMedia)
-          } else {
-            this._setMediaFullScreen(this.$.videoCallRemoteMedia)
-          }
+          var participants = this.participants || []
+
+          this.$.fullScreenSelector.select(
+            participants.find(function (participant) {
+              return (this.isInProgress
+                ? !participant.isLocal
+                : participant.isLocal
+              )
+            }.bind(this))
+          )
         }
       },
 
@@ -718,41 +742,23 @@
         }
       },
 
-      _mountTracks: function (tracks, el) {
-        tracks.forEach(function (track) {
-          console.log('[twilio-video-call-gui] mounting track', track, el)
-          Polymer.dom(el).appendChild(track.attach())
-        }, this)
-      },
-
-      _unmountTracks: function (tracks, el) {
-        tracks.forEach(function (track) {
-          console.log('[twilio-video-call-gui] unmounting track', track, el)
-          track.detach().forEach(function (detachedEl) {
-            detachedEl.remove()
-          })
-        }, this)
-      },
-
       _resetGui: function () {
         this.hideGui = this.properties.hideGui.value
         this.localAudioDisabled = this.properties.localAudioDisabled.value
         this.localVideoDisabled = this.properties.localVideoDisabled.value
         this.remoteAudioDisabled = this.properties.remoteAudioDisabled.value
         this.remoteVideoDisabled = this.properties.remoteVideoDisabled.value
-        Polymer.dom(this.localAvatarContainer).innerHTML = ''
-        Polymer.dom(this.remoteAvatarContainer).innerHTML = ''
-        Polymer.dom(this.roomAvatarContainer).innerHTML = ''
+        this.participants = this.properties.participants.value()
       },
 
       _setMediaFullScreen: function (mediaEl) {
-        var allMediaElements = Polymer.dom(this.$.videoCallMedia).children
+        if (mediaEl) {
+          var participant = this.$.participantsTemplate.itemForElement(mediaEl)
 
-        allMediaElements.forEach(function (el) {
-          el.removeAttribute('full-screen')
-        })
-
-        mediaEl.setAttribute('full-screen', '')
+          if (participant) {
+            this.$.fullScreenSelector.select(participant)
+          }
+        }
       },
 
       _setupRoom: function (room) {
@@ -761,19 +767,12 @@
           room.on('disconnected', this._onRoomDisconnected.bind(this))
           room.on('participantConnected', this._onParticipantConnected.bind(this))
           room.on('participantDisconnected', this._onParticipantDisconnected.bind(this))
-          room.on('trackAdded', this._onRemoteTrackAdded.bind(this))
-          room.on('trackRemoved', this._onRemoteTrackRemoved.bind(this))
-          room.on('trackDisabled', this._onTrackEnabledChanged.bind(this))
-          room.on('trackEnabled', this._onTrackEnabledChanged.bind(this))
-        }
-      },
 
-      _handleLocalTracksChanged: function (localTracks, removedLocalTracks) {
-        console.log('[twilio-video-call-gui] handle localtracks', localTracks)
-        if (localTracks) {
-          this._mountTracks(localTracks, this.$.videoCallLocalMedia)
-        } else if (removedLocalTracks) {
-          this._unmountTracks(removedLocalTracks, this.$.videoCallLocalMedia)
+          room.localParticipant.isLocal = true
+          this._onParticipantConnected(room.localParticipant)
+          room.participants.forEach(function (participant) {
+            this._onParticipantConnected(participant)
+          }.bind(this))
         }
       },
 
@@ -783,43 +782,21 @@
         if (err) console.error('[twilio-video-call-gui] room disconnect error', err)
 
         console.log('[twilio-video-call-gui] room disconnected', room)
-        this._unmountTracks(room.localParticipant.tracks, this.$.videoCallLocalMedia)
-        room.participants.forEach(function (participant) {
-          this._unmountTracks(participant.tracks, this.$.videoCallRemoteMedia)
-        }, this)
         this._resetGui()
+        room.removeAllListeners()
       },
 
       _onParticipantConnected: function (participant) {
         console.log('[twilio-video-call-gui] participant connected', participant)
+        this.push('participants', participant)
       },
 
       _onParticipantDisconnected: function (participant) {
         console.log('[twilio-video-call-gui] participant disconnected', participant)
-        this._unmountTracks(participant.tracks, this.$.videoCallRemoteMedia)
-      },
+        var indexOfParticipants = this.participants.indexOf(participant)
 
-      _onRemoteTrackAdded: function (track, participant) {
-        console.log('[twilio-video-call-gui]', participant.identity, 'added track:', participant, track)
-        this._mountTracks([track], this.$.videoCallRemoteMedia)
-      },
-
-      _onRemoteTrackRemoved: function (track, participant) {
-        console.log('[twilio-video-call-gui]', participant.identity, 'removed track:', participant, track)
-        this._unmountTracks([track], this.$.videoCallRemoteMedia)
-      },
-
-      _onTrackEnabledChanged: function (track, participant) {
-        console.log('[twilio-video-call-gui] track enabled changed', track, participant)
-
-        switch (track.kind) {
-          case 'video':
-            this.remoteVideoDisabled = !track.isEnabled
-            break
-          case 'audio':
-            this.remoteAudioDisabled = !track.isEnabled
-            break
-          default:
+        if (indexOfParticipants > -1) {
+          this.splice('participants', this.participants.indexOf(participant), 1)
         }
       },
 
@@ -833,31 +810,47 @@
         }, 500)
       },
 
+      _onParticipantsDomChange: function () {
+        this._checkFullScreenAutoChanges(this.opened, this.isInProgress)
+      },
+
+      _onParticipantAudioDisabledChanged: function (ev, detail) {
+        if (ev.target.isLocal) {
+          this.localAudioDisabled = detail.value
+        } else {
+          this.remoteAudioDisabled = detail.value
+        }
+      },
+
+      _onParticipantVideoDisabledChanged: function (ev, detail) {
+        if (ev.target.isLocal) {
+          this.localVideoDisabled = detail.value
+        } else {
+          this.remoteVideoDisabled = detail.value
+        }
+      },
+
       _onTapDisableAudio: function (ev, detail) {
-        var audioTrack
+        var participant = this.participants.find(function (participant) {
+          return participant.isLocal
+        })
 
-        if (this.localTracks && this.localTracks.length) {
-          audioTrack = this.localTracks.find(function (track) {
-            return track.kind === 'audio'
-          })
-
-          audioTrack.enable(!audioTrack.isEnabled)
-
-          this.localAudioDisabled = !audioTrack.isEnabled
+        if (participant) {
+          participant.audioTracks.forEach(function (track) {
+            track.enable(this.localAudioDisabled)
+          }.bind(this))
         }
       },
 
       _onTapDisableVideo: function (ev, detail) {
-        var videoTrack
+        var participant = this.participants.find(function (participant) {
+          return participant.isLocal
+        })
 
-        if (this.localTracks && this.localTracks.length) {
-          videoTrack = this.localTracks.find(function (track) {
-            return track.kind === 'video'
-          })
-
-          videoTrack.enable(!videoTrack.isEnabled)
-
-          this.localVideoDisabled = !videoTrack.isEnabled
+        if (participant) {
+          participant.videoTracks.forEach(function (track) {
+            track.enable(this.localVideoDisabled)
+          }.bind(this))
         }
       },
 
@@ -887,10 +880,6 @@
         var iconSrc = disabled ? disabledIcon : enabledIcon
 
         return iconSrc
-      },
-
-      _computeLocalAvatarHidden: function (opened, isInProgress, localVideoDisabled, localTracks) {
-        return (isInProgress ? !localVideoDisabled : !!(localTracks))
       },
 
       _computePickUpButtonHidden: function (isIncomingCall, isInProgress) {

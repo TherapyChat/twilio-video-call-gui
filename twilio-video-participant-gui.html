@@ -1,0 +1,152 @@
+<dom-module id="twilio-video-participant-gui">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host([is-local]) video {
+        transform: scale3d(-1, 1, 1);
+      }
+
+      video,
+      .image {
+        border-radius: 4px;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .1);
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      .image {
+        left: 0;
+        position: absolute;
+        top: 0;
+        transform: scale3d(1.05, 1.05, 1);
+        transition: opacity .2s ease;
+        z-index: 1;
+      }
+
+      .image ::slotted(*) {
+        height: 100%;
+        width: 100%;
+      }
+
+      .image[hidden] {
+        display: block;
+        visibility: visible;
+        opacity: 0;
+      }
+    </style>
+
+    <div
+      id="image"
+      class="image"
+      hidden$="[[!hasVideoDisabled]]"
+    >
+      <slot></slot>
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'twilio-video-participant-gui',
+
+      properties: {
+        identity: String,
+        participant: {
+          type: Object,
+          observer: '_handleParticipantChanged'
+        },
+        imageSrc: String,
+        name: String,
+        isLocal: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
+        },
+        hasAudioDisabled: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+        hasVideoDisabled: {
+          type: Boolean,
+          value: false,
+          notify: true
+        }
+      },
+
+      attached: function () {
+        this.fire('twilio-video-participant-gui-attached', {element: this})
+      },
+
+      _handleParticipantChanged: function (participant, oldParticipant) {
+        console.log('[twilio-video-participant-gui] handleParticipantChanged')
+        if (participant) {
+          this._setupListeners(participant)
+          this._mountTracks(participant.tracks)
+        }
+
+        if (oldParticipant) {
+          oldParticipant.removeAllListeners()
+        }
+      },
+
+      _onDisconnected: function (participant) {
+        console.log('[twilio-video-participant-gui] participant disconnected:', participant)
+        participant.removeAllListeners()
+        this._unmountTracks(participant.tracks)
+      },
+
+      _onTrackAdded: function (track) {
+        console.log('[twilio-video-participant-gui] track added', track)
+        console.log(track)
+        this._mountTracks([track])
+      },
+
+      _onTrackRemoved: function (track) {
+        console.log('[twilio-video-participant-gui] track removed', track)
+        console.log(track)
+        this._unmountTracks([track])
+      },
+
+      _onTrackEnableChanged: function (track) {
+        switch (track.kind) {
+          case 'audio':
+            this.hasAudioDisabled = !track.isEnabled
+            break
+          case 'video':
+            this.hasVideoDisabled = !track.isEnabled
+            break
+        }
+      },
+
+      _setupListeners: function (participant) {
+        console.log('[twilio-video-participant-gui] setting listeners', participant)
+        participant.on('trackAdded', this._onTrackAdded.bind(this))
+        participant.on('trackRemoved', this._onTrackRemoved.bind(this))
+        participant.on('trackEnabled', this._onTrackEnableChanged.bind(this))
+        participant.on('trackDisabled', this._onTrackEnableChanged.bind(this))
+        participant.on('disconnected', this._onDisconnected.bind(this))
+      },
+
+      _mountTracks: function (tracks) {
+        tracks.forEach(function (track) {
+          console.log('[twilio-video-participant-gui] mounting track', track)
+
+          Polymer.dom(this.root).appendChild(track.attach())
+        }, this)
+      },
+
+      _unmountTracks: function (tracks) {
+        tracks.forEach(function (track) {
+          console.log('[twilio-video-participant-gui] unmounting track', track)
+          track.detach().forEach(function (detachedEl) {
+            detachedEl.remove()
+          })
+        }, this)
+      }
+    })
+  </script>
+</dom-module>
