@@ -1,0 +1,88 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<dom-module id="twilio-video-toggle-button">
+  <template>
+    <style>
+      .toggle-button {
+        border-radius: 50%;
+        flex: 0 0 auto;
+        height: 54px;
+        padding: .8em;
+        position: relative;
+        transition-property: padding;
+        transition-duration: .2s;
+        transition-timing-function: ease;
+        width: 54px;
+      }
+
+      .toggle-button:hover {
+        padding: .5em;
+      }
+
+      .toggle-button:active {
+        padding: 1.2em;
+      }
+
+      @media (min-width: 600px) {
+        .toggle-button {
+          background-color: var(--transparent-white);
+          height: 68px;
+          padding: 20px;
+          top: 0;
+          width: 68px;
+        }
+
+        .toggle-button:hover {
+          padding: 16px;
+        }
+
+        .toggle-button:active  {
+          padding: 1.6em;
+        }
+      }
+    </style>
+
+    <paper-icon-button
+      class="toggle-button"
+      active$="[[active]]"
+      icon="[[_computeToggleString(active, activeIconIcon, inactiveIconIcon)]]"
+      src="[[_computeToggleString(active, activeIconSrc, inactiveIconSrc)]]"
+      toggles
+    ></paper-icon-button>
+  </template>
+  <script>
+    Polymer({
+      is: 'twilio-video-toggle-button',
+
+      properties: {
+        active: {
+          type: Boolean,
+          notify: true,
+          value: false
+        },
+        activeIconIcon: {
+          type: String,
+          value: ''
+        },
+        activeIconSrc: {
+          type: String,
+          value: ''
+        },
+        inactiveIconIcon: {
+          type: String,
+          value: ''
+        },
+        inactiveIconSrc: {
+          type: String,
+          value: ''
+        }
+      },
+
+      _computeToggleString: function (active, activeString, inactiveString) {
+        return (active ? activeString : inactiveString)
+      }
+    })
+  </script>
+</dom-module>
