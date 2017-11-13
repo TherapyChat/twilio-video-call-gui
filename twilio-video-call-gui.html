@@ -2,11 +2,16 @@
 
 <link rel="import" href="../iron-overlay-behavior/iron-overlay-behavior.html">
 
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
 <link rel="import" href="../iron-icons/communication-icons.html">
 <link rel="import" href="../iron-image/iron-image.html">
 
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
+<link rel="import" href="../time-counter/time-counter.html">
+
+<link rel="import" href="twilio-video-toggle-button.html">
 <link rel="import" href="twilio-video-participant-gui.html">
 
 <dom-module id="twilio-video-call-gui">
@@ -31,6 +36,7 @@
         color: var(--dark-theme-text-color, #ffffff);
         display: block;
         font-size: 1rem;
+        overflow: hidden;
       }
 
       * {
@@ -50,7 +56,8 @@
 
       :host([opened]) {
         background-color: var(--dark-theme-background-color, #000000);
-        /* iron-overlay apply display: none; sometimes when user clicks constantly
+        /*
+         * iron-overlay apply display: none; sometimes when user clicks constantly
          * on the screen during open process, this prevent overlay to be hidden
          * on that case
          */
@@ -58,6 +65,10 @@
         height: 100%;
         width: 100%;
         z-index: 100;
+      }
+
+      :host([minimized]) {
+        height: 0;
       }
 
       .header {
@@ -415,7 +426,7 @@
           height: 68px;
           justify-content: space-between;
           left: 50%;
-          max-width: 400px;
+          max-width: 550px;
           transform: translate3d(-50%, 0, 0);
         }
 
@@ -482,7 +493,12 @@
           [[_computeTitle(isIncomingCall, isInProgress)]]
         </div>
         <div class="header__subtitle">
-          [[_computeSubtitle(isIncomingCall, isInProgress, roomTitle, duration)]]
+          <template is="dom-if" if="[[isInProgress]]">
+            <time-counter start-date="[[startDate]]"></time-counter>
+          </template>
+          <template is="dom-if" if="[[!isInProgress]]">
+            [[_computeSubtitle(isIncomingCall, roomTitle)]]
+          </template>
         </div>
       </div>
     </div>
@@ -530,16 +546,21 @@
     </div>
 
     <div class="actions">
+      <div class="actions__action-button"
+        style="opacity: 0; visibility: hidden;"
+        hidden$="[[!isInProgress]]"
+      ></div>
       <div class="actions__action-item">
         <div class="actions__action-tooltip actions__action-tooltip_video"
           hidden$="[[!localVideoDisabled]]"
         >Has apagado tu cámara</div>
-        <paper-icon-button
-        class="actions__action-button"
-        src="[[_computeDisableableIcon(localVideoDisabled, enabledVideoIcon, disabledVideoIcon)]]"
-        on-tap="_onTapDisableVideo"
-        hidden$="[[_computeVideoCallControlsHidden(isInProgress)]]"
-        ></paper-icon-button>
+        <twilio-video-toggle-button
+          active-icon-src="[[enabledVideoIcon]]"
+          inactive-icon-src="[[disabledVideoIcon]]"
+          active="[[!localVideoDisabled]]"
+          hidden$="[[!isInProgress]]"
+          on-tap="_onTapVideoToggleButton"
+        ></twilio-video-toggle-button>
       </div>
       <paper-icon-button
         class="actions__action-button actions__hang-up"
@@ -558,13 +579,21 @@
         <div class="actions__action-tooltip actions__action-tooltip_audio"
           hidden$="[[!localAudioDisabled]]"
         >Has silenciado el micrófono</div>
-        <paper-icon-button
-          class="actions__action-button"
-          src="[[_computeDisableableIcon(localAudioDisabled, enabledAudioIcon, disabledAudioIcon)]]"
-          on-tap="_onTapDisableAudio"
-          hidden$="[[_computeVideoCallControlsHidden(isInProgress)]]"
-        ></paper-icon-button>
+        <twilio-video-toggle-button
+          active-icon-src="[[enabledAudioIcon]]"
+          inactive-icon-src="[[disabledAudioIcon]]"
+          active="[[!localAudioDisabled]]"
+          hidden$="[[!isInProgress]]"
+          on-tap="_onTapAudioToggleButton"
+        ></twilio-video-toggle-button>
       </div>
+      <twilio-video-toggle-button
+        active-icon-src="[[maximizeIcon]]"
+        inactive-icon-src="[[minimizeIcon]]"
+        active="[[minimized]]"
+        hidden$="[[!isInProgress]]"
+        on-tap="_onTapMinimizeToggleButton"
+      ></twilio-video-toggle-button>
     </div>
 
   </template>
@@ -577,21 +606,32 @@
       ],
 
       properties: {
-        duration: {
-          type: Number,
-          value: 0
-        },
         disabled: {
           type: Boolean,
           value: false,
           reflectToAttribute: true
         },
-        disabledAudioIcon: String,
-        disabledVideoIcon: String,
-        enabledAudioIcon: String,
-        enabledVideoIcon: String,
+        disabledAudioIcon: {
+          type: String,
+          value: 'av:mic-off'
+        },
+        disabledVideoIcon: {
+          type: String,
+          value: 'av:videocam-off'
+        },
+        enabledAudioIcon: {
+          type: String,
+          value: 'av:mic'
+        },
+        enabledVideoIcon: {
+          type: String,
+          value: 'av:videocam'
+        },
         fullScreenParticipant: Object,
-        hangUpIcon: String,
+        hangUpIcon: {
+          type: String,
+          value: 'communication:call-end'
+        },
         hideGui: {
           type: Boolean,
           value: false,
@@ -618,15 +658,38 @@
           type: Boolean,
           value: false
         },
+        maximizeIcon: {
+          type: String,
+          value: 'icons:fullscreen'
+        },
+        minimized: {
+          type: Boolean,
+          notify: true,
+          value: false,
+          reflectToAttribute: true,
+          observer: '_handleMinimizedChanged'
+        },
+        minimizeIcon: {
+          type: String,
+          value: 'icons:fullscreen-exit'
+        },
         noCancelOnEscKey: {
+          type: Boolean,
+          value: true
+        },
+        noCancelOnOutsideClick: {
           type: Boolean,
           value: true
         },
         opened: {
           type: Boolean,
-          value: false
+          value: false,
+          reflectToAttribute: true
         },
-        pickUpIcon: String,
+        pickUpIcon: {
+          type: String,
+          value: 'communication:call'
+        },
         participants: {
           type: Array,
           value: function () {
@@ -654,15 +717,14 @@
           type: String,
           value: ''
         },
-        _startDate: {
+        startDate: {
           type: Number,
-          computed: '_computeStartDate(isInProgress)',
-          observer: '_handleStartDateChanged'
+          value: undefined
         }
       },
 
       observers: [
-        '_handleOpenedChanged(opened)'
+        '_handleOpenedChanged(opened, isInProgress)'
       ],
 
       // Public functions
@@ -688,27 +750,8 @@
         })
       },
 
-      _computeDurationDebounced: function () {
-        if (this._startDate) {
-          this.debounce('computeDuration', function () {
-            this.duration = Date.now() - this._startDate
-            this._computeDurationDebounced()
-          }, 1000)
-        } else if (this.isDebouncerActive('computeDuration')) {
-          this.cancelDebouncer('computeDuration')
-        }
-      },
-
       _computeParticipantFullScreen: function (participant, fullScreenParticipant) {
         return this.$.fullScreenSelector.isSelected(participant)
-      },
-
-      _formatDuration: function (durationInMilliseconds) {
-        var durationInSeconds = Math.floor(durationInMilliseconds / 1000)
-        var hours = Math.floor(durationInSeconds / 3600)
-        var minutes = Math.floor((durationInSeconds % 3600) / 60)
-        var seconds = durationInSeconds % 60
-        return this._padLeft(hours) + ':' + this._padLeft(minutes) + ':' + this._padLeft(seconds)
       },
 
       _checkFullScreenAutoChanges: function (opened, isInProgress) {
@@ -726,8 +769,16 @@
         }
       },
 
-      _handleOpenedChanged: function (opened) {
-        if (!opened) {
+      _handleMinimizedChanged: function (minimized) {
+        if (!minimized) {
+          this.async(function () {
+            this.fit()
+          }, 0)
+        }
+      },
+
+      _handleOpenedChanged: function (opened, isInProgress) {
+        if (!opened && !isInProgress) {
           this._resetGui()
         }
       },
@@ -736,16 +787,11 @@
         this._setupRoom(room)
       },
 
-      _handleStartDateChanged: function (startDate) {
-        if (startDate) {
-          this._computeDurationDebounced()
-        }
-      },
-
       _resetGui: function () {
         this.hideGui = this.properties.hideGui.value
         this.localAudioDisabled = this.properties.localAudioDisabled.value
         this.localVideoDisabled = this.properties.localVideoDisabled.value
+        this.minimized = this.properties.minimized.value
         this.remoteAudioDisabled = this.properties.remoteAudioDisabled.value
         this.remoteVideoDisabled = this.properties.remoteVideoDisabled.value
         this.participants = this.properties.participants.value()
@@ -804,6 +850,8 @@
 
       _onIronResize: function () {
         // ensures correct layout with phone keyboard changes
+        if (this.minimized) return
+
         this.fit()
         this.async(function () {
           this.fit()
@@ -830,7 +878,7 @@
         }
       },
 
-      _onTapDisableAudio: function (ev, detail) {
+      _onTapAudioToggleButton: function (ev, detail) {
         var participant = this.participants.find(function (participant) {
           return participant.isLocal
         })
@@ -842,7 +890,12 @@
         }
       },
 
-      _onTapDisableVideo: function (ev, detail) {
+      _onTapMinimizeToggleButton: function (ev, detail) {
+        this.minimized = !this.minimized
+        this.withBackdrop = !this.minimized
+      },
+
+      _onTapVideoToggleButton: function (ev, detail) {
         var participant = this.participants.find(function (participant) {
           return participant.isLocal
         })
@@ -876,46 +929,20 @@
 
       // Computed Callbacks
 
-      _computeDisableableIcon: function (disabled, enabledIcon, disabledIcon) {
-        var iconSrc = disabled ? disabledIcon : enabledIcon
-
-        return iconSrc
-      },
-
       _computePickUpButtonHidden: function (isIncomingCall, isInProgress) {
         return (!isIncomingCall || isInProgress)
       },
 
-      _computeStartDate: function (isInProgress) {
-        return isInProgress ? Date.now() : undefined
-      },
-
-      _computeSubtitle: function (isIncomingCall, isInProgress, roomTitle, duration) {
-        return isInProgress
-          ? this._formatDuration(duration)
-          : (isIncomingCall ? roomTitle : 'llamando a ' + roomTitle + '...')
+      _computeSubtitle: function (isIncomingCall, roomTitle) {
+        return isIncomingCall
+          ? roomTitle
+          : 'llamando a ' + roomTitle + '...'
       },
 
       _computeTitle: function (isIncomingCall, isInProgress) {
         return (isIncomingCall && !isInProgress)
           ? 'Videollamada entrante'
           : 'Videollamada'
-      },
-
-      _computeVideoCallControlsHidden: function (isInProgress) {
-        return !isInProgress
-      },
-
-      // Helpers
-
-      _padLeft: function (value, length, chars) {
-        chars = chars === undefined ? '0' : '' + chars
-        length = length === undefined ? 2 : length
-        value = value === undefined ? '' : '' + value
-        while (value.length < length && chars.length > 0) {
-          value = chars + value
-        }
-        return value.substr(-length)
       }
     })
   </script>

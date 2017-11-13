@@ -1,6 +1,6 @@
 {
   "name": "@therapychat/twilio-video-call-gui",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Polymer Element of Twilio Video Overlay GUI",
   "main": "twilio-video-call-gui.html",
   "scripts": {
@@ -12,8 +12,7 @@
     "pretest": "npm run lint",
     "test": "polymer test",
     "preversion": "npm test",
-    "version": "npm run version:changelog && git add CHANGELOG.md",
-    "version:changelog": "node .scripts/version.js"
+    "version": "changelog-version && git add CHANGELOG.md"
   },
   "repository": {
     "type": "git",
@@ -40,6 +39,7 @@
     "test": "test"
   },
   "devDependencies": {
+    "changelog-version": "^1.0.1",
     "eslint": "^4.1.1",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-html": "^3.0.0",

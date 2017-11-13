@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## v2.1.0 - 2017-11-13
+### Added
+- Minimize functionality
+  - Now the user can minimize the video overlay and hide it
+### Changed
+- Replaced timer with [`time-counter`](https://www.webcomponents.org/element/TherapyChat/time-counter) component.
+### Fixed
+- Styles and fit errors
+
+
+
+
 ## v2.0.1 - 2017-11-06
 ### Changed
 - Change travis build config to use polylint and wct until polymer-cli works well
