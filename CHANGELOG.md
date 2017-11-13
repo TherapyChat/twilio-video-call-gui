@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - Now the user can minimize the video overlay and hide it
 ### Changed
 - Replaced timer with [`time-counter`](https://www.webcomponents.org/element/TherapyChat/time-counter) component.
+### Fixed
+- Styles and fit errors
 
 
 

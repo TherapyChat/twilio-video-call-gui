@@ -65,7 +65,6 @@
         height: 100%;
         width: 100%;
         z-index: 100;
-        transition: height .2s ease;
       }
 
       :host([minimized]) {
@@ -427,7 +426,7 @@
           height: 68px;
           justify-content: space-between;
           left: 50%;
-          max-width: 400px;
+          max-width: 550px;
           transform: translate3d(-50%, 0, 0);
         }
 
@@ -547,6 +546,10 @@
     </div>
 
     <div class="actions">
+      <div class="actions__action-button"
+        style="opacity: 0; visibility: hidden;"
+        hidden$="[[!isInProgress]]"
+      ></div>
       <div class="actions__action-item">
         <div class="actions__action-tooltip actions__action-tooltip_video"
           hidden$="[[!localVideoDisabled]]"
@@ -663,7 +666,8 @@
           type: Boolean,
           notify: true,
           value: false,
-          reflectToAttribute: true
+          reflectToAttribute: true,
+          observer: '_handleMinimizedChanged'
         },
         minimizeIcon: {
           type: String,
@@ -765,6 +769,14 @@
         }
       },
 
+      _handleMinimizedChanged: function (minimized) {
+        if (!minimized) {
+          this.async(function () {
+            this.fit()
+          }, 0)
+        }
+      },
+
       _handleOpenedChanged: function (opened, isInProgress) {
         if (!opened && !isInProgress) {
           this._resetGui()
@@ -838,6 +850,8 @@
 
       _onIronResize: function () {
         // ensures correct layout with phone keyboard changes
+        if (this.minimized) return
+
         this.fit()
         this.async(function () {
           this.fit()
