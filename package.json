@@ -6,7 +6,7 @@
   "scripts": {
     "build": "polymer build",
     "lint": "npm run lint:js && npm run lint:polymer",
-    "lint:js": "eslint **/*.js **/*.html",
+    "lint:js": "eslint --ext html,js .",
     "lint:polymer": "polymer lint",
     "start": "polymer serve",
     "pretest": "npm run lint",

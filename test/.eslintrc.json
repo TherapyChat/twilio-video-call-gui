@@ -3,13 +3,14 @@
     "mocha": true
   },
   "globals": {
-    "assert": false,
-    "a11ySuite": false,
-    "fixture": false,
-    "flush": false,
-    "replace": false,
-    "sinon": false,
-    "stub": false,
-    "WCT": false
+    "assert": true,
+    "a11ySuite": true,
+    "expect": true,
+    "fixture": true,
+    "flush": true,
+    "replace": true,
+    "sinon": true,
+    "stub": true,
+    "WCT": true
   }
 }

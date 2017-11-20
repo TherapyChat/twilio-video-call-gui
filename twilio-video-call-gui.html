@@ -124,7 +124,17 @@
 
       .media-preview {
         height: 100%;
+        opacity: 1;
+        position: relative;
+        transition: opacity .2s ease;
         width: 100%;
+        z-index: 0;
+      }
+
+      .media-preview[hidden] {
+        display: block;
+        visibility: visible;
+        opacity: 0;
       }
 
       .media-preview ::slotted(*) {
@@ -505,7 +515,7 @@
 
     <div id="videoCallMedia">
 
-      <div class="media-preview">
+      <div class="media-preview" hidden$="[[isInProgress]]">
         <slot name="previewImage"></slot>
       </div>
 
