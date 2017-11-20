@@ -20,9 +20,30 @@
 
     <script>
       suite('twilio-video-call-gui', function () {
+        var element
+
+        setup(function () {
+          element = fixture('basic')
+        })
+
         test('instantiating the element works', function () {
-          var element = fixture('basic')
-          assert.equal(element.is, 'twilio-video-call-gui')
+          expect(element.is).to.be.equal('twilio-video-call-gui')
+        })
+
+        suite('when in progress', function () {
+          test('.media-preview should be hidden', function (done) {
+            var previewEl = Polymer.dom(element.root).querySelector('.media-preview')
+
+            expect(element.isInProgress).to.equal(false)
+            expect(previewEl.hasAttribute('hidden')).to.equal(false)
+
+            element.isInProgress = true
+
+            flush(function () {
+              expect(previewEl.hasAttribute('hidden')).to.equal(true)
+              done()
+            })
+          })
         })
       })
     </script>

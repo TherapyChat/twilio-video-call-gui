@@ -1,12 +1,12 @@
 {
   "name": "@therapychat/twilio-video-call-gui",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Polymer Element of Twilio Video Overlay GUI",
   "main": "twilio-video-call-gui.html",
   "scripts": {
     "build": "polymer build",
     "lint": "npm run lint:js && npm run lint:polymer",
-    "lint:js": "eslint **/*.js **/*.html",
+    "lint:js": "eslint --ext html,js .",
     "lint:polymer": "polymer lint",
     "start": "polymer serve",
     "pretest": "npm run lint",

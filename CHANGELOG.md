@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## v2.1.1 - 2017-11-20
+### Fixed
+- Ensures preview image is hidden when call is in progress. #4
+
+
+
+
 ## v2.1.0 - 2017-11-13
 ### Added
 - Minimize functionality
