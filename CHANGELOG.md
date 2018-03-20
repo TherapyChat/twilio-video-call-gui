@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
-## [UNRELEASED]
+## v2.1.2 - 2018-03-20
 ### Changed
 - Update npm and bower depencies
 
