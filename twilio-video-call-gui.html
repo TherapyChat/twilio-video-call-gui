@@ -531,7 +531,7 @@
           participant="{{participant}}"
           is-local="{{participant.isLocal}}"
           full-screen$="{{_computeParticipantFullScreen(participant, fullScreenParticipant)}}"
-          on-tap="_onTapMedia"
+          on-click="_onClickMedia"
           on-has-audio-disabled-changed="_onParticipantAudioDisabledChanged"
           on-has-video-disabled-changed="_onParticipantVideoDisabledChanged"
         >
@@ -569,19 +569,19 @@
           inactive-icon-src="[[disabledVideoIcon]]"
           active="[[!localVideoDisabled]]"
           hidden$="[[!isInProgress]]"
-          on-tap="_onTapVideoToggleButton"
+          on-click="_onClickVideoToggleButton"
         ></twilio-video-toggle-button>
       </div>
       <paper-icon-button
         class="actions__action-button actions__hang-up"
         src="[[hangUpIcon]]"
-        on-tap="_onTapHangUp"
+        on-click="_onClickHangUp"
         disabled$="[[disabled]]"
       ></paper-icon-button>
       <paper-icon-button
         class="actions__action-button actions__pick-up"
         src="[[pickUpIcon]]"
-        on-tap="_onTapPickUp"
+        on-click="_onClickPickUp"
         hidden$="[[_computePickUpButtonHidden(isIncomingCall, isInProgress)]]"
         disabled$="[[disabled]]"
       ></paper-icon-button>
@@ -594,7 +594,7 @@
           inactive-icon-src="[[disabledAudioIcon]]"
           active="[[!localAudioDisabled]]"
           hidden$="[[!isInProgress]]"
-          on-tap="_onTapAudioToggleButton"
+          on-click="_onClickAudioToggleButton"
         ></twilio-video-toggle-button>
       </div>
       <twilio-video-toggle-button
@@ -602,7 +602,7 @@
         inactive-icon-src="[[minimizeIcon]]"
         active="[[minimized]]"
         hidden$="[[!isInProgress]]"
-        on-tap="_onTapMinimizeToggleButton"
+        on-click="_onClickMinimizeToggleButton"
       ></twilio-video-toggle-button>
     </div>
 
@@ -858,6 +858,55 @@
 
       // Events Callbacks
 
+      _onClickAudioToggleButton: function (ev, detail) {
+        var participant = this.participants.find(function (participant) {
+          return participant.isLocal
+        })
+
+        if (participant) {
+          participant.audioTracks.forEach(function (track) {
+            track.enable(this.localAudioDisabled)
+          }.bind(this))
+        }
+      },
+
+      _onClickMinimizeToggleButton: function (ev, detail) {
+        this.minimized = !this.minimized
+        this.withBackdrop = !this.minimized
+      },
+
+      _onClickVideoToggleButton: function (ev, detail) {
+        var participant = this.participants.find(function (participant) {
+          return participant.isLocal
+        })
+
+        if (participant) {
+          participant.videoTracks.forEach(function (track) {
+            track.enable(this.localVideoDisabled)
+          }.bind(this))
+        }
+      },
+
+      _onClickHangUp: function (ev, detail) {
+        this.hangUp()
+      },
+
+      _onClickMedia: function (ev, detail) {
+        var tapedEl = ev.currentTarget
+
+        if (this.isInProgress) {
+          if (tapedEl.hasAttribute('full-screen')) {
+            this.hideGui = !this.hideGui
+          } else {
+            this._setMediaFullScreen(tapedEl)
+          }
+        }
+      },
+
+      _onClickPickUp: function (ev, detail) {
+        this.pickUp()
+      },
+
       _onIronResize: function () {
         // ensures correct layout with phone keyboard changes
         if (this.minimized) return
@@ -886,55 +935,6 @@
         } else {
           this.remoteVideoDisabled = detail.value
         }
-      },
-
-      _onTapAudioToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.audioTracks.forEach(function (track) {
-            track.enable(this.localAudioDisabled)
-          }.bind(this))
-        }
-      },
-
-      _onTapMinimizeToggleButton: function (ev, detail) {
-        this.minimized = !this.minimized
-        this.withBackdrop = !this.minimized
-      },
-
-      _onTapVideoToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.videoTracks.forEach(function (track) {
-            track.enable(this.localVideoDisabled)
-          }.bind(this))
-        }
-      },
-
-      _onTapHangUp: function (ev, detail) {
-        this.hangUp()
-      },
-
-      _onTapMedia: function (ev, detail) {
-        var tapedEl = ev.currentTarget
-
-        if (this.isInProgress) {
-          if (tapedEl.hasAttribute('full-screen')) {
-            this.hideGui = !this.hideGui
-          } else {
-            this._setMediaFullScreen(tapedEl)
-          }
-        }
-      },
-
-      _onTapPickUp: function (ev, detail) {
-        this.pickUp()
       },
 
       // Computed Callbacks
