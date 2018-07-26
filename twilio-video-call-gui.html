@@ -747,17 +747,45 @@
         this.removeEventListener('iron-resize', this._onIronResize)
       },
 
+      hangUp: function () {
+        this.fire('video-call-hang-up', {
+          roomName: this.roomName,
+          rejected: !this.isInProgress && this.isIncomingCall
+        })
+      },
+
       pickUp: function () {
         this.fire('video-call-pick-up', {
           roomName: this.roomName
         })
       },
 
-      hangUp: function () {
-        this.fire('video-call-hang-up', {
-          roomName: this.roomName,
-          rejected: !this.isInProgress && this.isIncomingCall
-        })
+      toggleGui: function () {
+        this.hideGui = !this.hideGui
+      },
+
+      toggleLocalAudio: function () {
+        var participant = this.participants.find(
+          participant => participant.isLocal
+        )
+
+        if (participant) {
+          participant.audioTracks.forEach(
+            track => track.enable(this.localAudioDisabled)
+          )
+        }
+      },
+
+      toggleLocalVideo: function () {
+        var participant = this.participants.find(
+          participant => participant.isLocal
+        )
+
+        if (participant) {
+          participant.videoTracks.forEach(
+            track => track.enable(this.localVideoDisabled)
+          )
+        }
       },
 
       _computeParticipantFullScreen: function (participant, fullScreenParticipant) {
@@ -767,15 +795,13 @@
       _checkFullScreenAutoChanges: function (opened, isInProgress) {
         if (opened) {
           var participants = this.participants || []
-
-          this.$.fullScreenSelector.select(
-            participants.find(function (participant) {
-              return (this.isInProgress
-                ? !participant.isLocal
-                : participant.isLocal
-              )
-            }.bind(this))
+          var participantForFullScreen = participants.find(
+            participant => this.isInProgress
+              ? !participant.isLocal
+              : participant.isLocal
           )
+
+          this.$.fullScreenSelector.select(participantForFullScreen)
         }
       },
 
@@ -826,9 +852,9 @@
 
           room.localParticipant.isLocal = true
           this._onParticipantConnected(room.localParticipant)
-          room.participants.forEach(function (participant) {
-            this._onParticipantConnected(participant)
-          }.bind(this))
+          room.participants.forEach(
+            participant => this._onParticipantConnected(participant)
+          )
         }
       },
 
@@ -858,52 +884,36 @@
 
       // Events Callbacks
 
-      _onClickAudioToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.audioTracks.forEach(function (track) {
-            track.enable(this.localAudioDisabled)
-          }.bind(this))
-        }
+      _onClickAudioToggleButton: function (ev) {
+        this.toggleLocalAudio()
       },
 
-      _onClickMinimizeToggleButton: function (ev, detail) {
+      _onClickMinimizeToggleButton: function (ev) {
         this.minimized = !this.minimized
         this.withBackdrop = !this.minimized
       },
 
-      _onClickVideoToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.videoTracks.forEach(function (track) {
-            track.enable(this.localVideoDisabled)
-          }.bind(this))
-        }
+      _onClickVideoToggleButton: function (ev) {
+        this.toggleLocalVideo()
       },
 
-      _onClickHangUp: function (ev, detail) {
+      _onClickHangUp: function (ev) {
         this.hangUp()
       },
 
-      _onClickMedia: function (ev, detail) {
+      _onClickMedia: function (ev) {
         var tapedEl = ev.currentTarget
 
         if (this.isInProgress) {
           if (tapedEl.hasAttribute('full-screen')) {
-            this.hideGui = !this.hideGui
+            this.toggleGui()
           } else {
             this._setMediaFullScreen(tapedEl)
           }
         }
       },
 
-      _onClickPickUp: function (ev, detail) {
+      _onClickPickUp: function (ev) {
         this.pickUp()
       },
 
