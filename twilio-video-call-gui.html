@@ -11,6 +11,7 @@
 
 <link rel="import" href="../time-counter/time-counter.html">
 
+<link rel="import" href="twilio-video-call-icons-behavior.html">
 <link rel="import" href="twilio-video-toggle-button.html">
 <link rel="import" href="twilio-video-participant-gui.html">
 
@@ -565,8 +566,10 @@
           hidden$="[[!localVideoDisabled]]"
         >Has apagado tu cámara</div>
         <twilio-video-toggle-button
-          active-icon-src="[[enabledVideoIcon]]"
-          inactive-icon-src="[[disabledVideoIcon]]"
+          icon-active-icon="[[iconVideoEnabledIcon]]"
+          icon-active-src="[[iconVideoEnabledSrc]]"
+          icon-inactive-icon="[[iconVideoDisabledIcon]]"
+          icon-inactive-src="[[iconVideoDisabledSrc]]"
           active="[[!localVideoDisabled]]"
           hidden$="[[!isInProgress]]"
           on-click="_onClickVideoToggleButton"
@@ -574,13 +577,15 @@
       </div>
       <paper-icon-button
         class="actions__action-button actions__hang-up"
-        src="[[hangUpIcon]]"
+        icon="[[iconHangUpIcon]]"
+        src="[[iconHangUpSrc]]"
         on-click="_onClickHangUp"
         disabled$="[[disabled]]"
       ></paper-icon-button>
       <paper-icon-button
         class="actions__action-button actions__pick-up"
-        src="[[pickUpIcon]]"
+        icon="[[iconPickUpIcon]]"
+        src="[[iconPickUpSrc]]"
         on-click="_onClickPickUp"
         hidden$="[[_computePickUpButtonHidden(isIncomingCall, isInProgress)]]"
         disabled$="[[disabled]]"
@@ -590,16 +595,20 @@
           hidden$="[[!localAudioDisabled]]"
         >Has silenciado el micrófono</div>
         <twilio-video-toggle-button
-          active-icon-src="[[enabledAudioIcon]]"
-          inactive-icon-src="[[disabledAudioIcon]]"
+          icon-active-icon="[[iconAudioEnabledIcon]]"
+          icon-active-src="[[iconAudioEnabledSrc]]"
+          icon-inactive-icon="[[iconAudioDisabledIcon]]"
+          icon-inactive-src="[[iconAudioDisabledSrc]]"
           active="[[!localAudioDisabled]]"
           hidden$="[[!isInProgress]]"
           on-click="_onClickAudioToggleButton"
         ></twilio-video-toggle-button>
       </div>
       <twilio-video-toggle-button
-        active-icon-src="[[maximizeIcon]]"
-        inactive-icon-src="[[minimizeIcon]]"
+        icon-active-icon="[[iconMaximizeIcon]]"
+        icon-active-src="[[iconMaximizeSrc]]"
+        icon-inactive-icon="[[iconMinimizeIcon]]"
+        icon-inactive-src="[[iconMinimizeSrc]]"
         active="[[minimized]]"
         hidden$="[[!isInProgress]]"
         on-click="_onClickMinimizeToggleButton"
@@ -612,7 +621,8 @@
       is: 'twilio-video-call-gui',
 
       behaviors: [
-        Polymer.IronOverlayBehavior
+        Polymer.IronOverlayBehavior,
+        Polymer.TwilioVideoCallIconsBehavior
       ],
 
       properties: {
@@ -621,27 +631,7 @@
           value: false,
           reflectToAttribute: true
         },
-        disabledAudioIcon: {
-          type: String,
-          value: 'av:mic-off'
-        },
-        disabledVideoIcon: {
-          type: String,
-          value: 'av:videocam-off'
-        },
-        enabledAudioIcon: {
-          type: String,
-          value: 'av:mic'
-        },
-        enabledVideoIcon: {
-          type: String,
-          value: 'av:videocam'
-        },
         fullScreenParticipant: Object,
-        hangUpIcon: {
-          type: String,
-          value: 'communication:call-end'
-        },
         hideGui: {
           type: Boolean,
           value: false,
@@ -668,20 +658,12 @@
           type: Boolean,
           value: false
         },
-        maximizeIcon: {
-          type: String,
-          value: 'icons:fullscreen'
-        },
         minimized: {
           type: Boolean,
           notify: true,
           value: false,
           reflectToAttribute: true,
           observer: '_handleMinimizedChanged'
-        },
-        minimizeIcon: {
-          type: String,
-          value: 'icons:fullscreen-exit'
         },
         noCancelOnEscKey: {
           type: Boolean,
@@ -695,10 +677,6 @@
           type: Boolean,
           value: false,
           reflectToAttribute: true
-        },
-        pickUpIcon: {
-          type: String,
-          value: 'communication:call'
         },
         participants: {
           type: Array,
