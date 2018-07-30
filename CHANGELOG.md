@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## [UNRELEASED]
+### Changed
+- Refactor icon buttons logic
+- Now video-call-pick-up event is twilio-video-pick-up
+- Now video-call-hang-up event is twilio-video-hang-up
+
+
+
+
 ## v2.1.2 - 2018-03-20
 ### Changed
 - Update npm and bower depencies
