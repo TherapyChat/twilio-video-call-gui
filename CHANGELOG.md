@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
+## [UNRELEASED]
+### Fixed
+- Fix sauce test config
+
+
+
+
 ## v2.2.0 - 2018-07-30
 ### Changed
 - Refactor icon buttons logic
