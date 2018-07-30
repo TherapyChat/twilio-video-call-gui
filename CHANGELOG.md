@@ -17,14 +17,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 
-## v2.2.1 - 2018-07-30
+## v3.0.1 - 2018-07-30
 ### Fixed
 - Fix sauce test config
 
 
 
 
-## v2.2.0 - 2018-07-30
+## v3.0.0 - 2018-07-30
 ### Changed
 - Refactor icon buttons logic
 - Now video-call-pick-up event is twilio-video-pick-up
