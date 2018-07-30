@@ -726,16 +726,24 @@
       },
 
       hangUp: function () {
-        this.fire('video-call-hang-up', {
-          roomName: this.roomName,
-          rejected: !this.isInProgress && this.isIncomingCall
-        })
+        this.dispatchEvent(new CustomEvent('twilio-video-hang-up', {
+          detail: {
+            roomName: this.roomName,
+            rejected: !this.isInProgress && this.isIncomingCall
+          },
+          bubbles: true,
+          composed: true
+        }))
       },
 
       pickUp: function () {
-        this.fire('video-call-pick-up', {
-          roomName: this.roomName
-        })
+        this.dispatchEvent(new CustomEvent('twilio-video-pick-up', {
+          detail: {
+            roomName: this.roomName
+          },
+          bubbles: true,
+          composed: true
+        }))
       },
 
       toggleGui: function () {
@@ -743,9 +751,7 @@
       },
 
       toggleLocalAudio: function () {
-        var participant = this.participants.find(
-          participant => participant.isLocal
-        )
+        var participant = this._getLocalParticipant()
 
         if (participant) {
           participant.audioTracks.forEach(
@@ -755,9 +761,7 @@
       },
 
       toggleLocalVideo: function () {
-        var participant = this.participants.find(
-          participant => participant.isLocal
-        )
+        var participant = this._getLocalParticipant()
 
         if (participant) {
           participant.videoTracks.forEach(
@@ -781,6 +785,10 @@
 
           this.$.fullScreenSelector.select(participantForFullScreen)
         }
+      },
+
+      _getLocalParticipant: function () {
+        return this.participants.find(participant => participant.isLocal)
       },
 
       _handleMinimizedChanged: function (minimized) {
@@ -823,7 +831,7 @@
 
       _setupRoom: function (room) {
         if (room) {
-          console.log('[twilio-video-call-gui] setting up room', room)
+          // console.log('[twilio-video-call-gui] setting up room', room)
           room.on('disconnected', this._onRoomDisconnected.bind(this))
           room.on('participantConnected', this._onParticipantConnected.bind(this))
           room.on('participantDisconnected', this._onParticipantDisconnected.bind(this))
@@ -841,18 +849,18 @@
       _onRoomDisconnected: function (room, err) {
         if (err) console.error('[twilio-video-call-gui] room disconnect error', err)
 
-        console.log('[twilio-video-call-gui] room disconnected', room)
+        // console.log('[twilio-video-call-gui] room disconnected', room)
         this._resetGui()
         room.removeAllListeners()
       },
 
       _onParticipantConnected: function (participant) {
-        console.log('[twilio-video-call-gui] participant connected', participant)
+        // console.log('[twilio-video-call-gui] participant connected', participant)
         this.push('participants', participant)
       },
 
       _onParticipantDisconnected: function (participant) {
-        console.log('[twilio-video-call-gui] participant disconnected', participant)
+        // console.log('[twilio-video-call-gui] participant disconnected', participant)
         var indexOfParticipants = this.participants.indexOf(participant)
 
         if (indexOfParticipants > -1) {
@@ -909,7 +917,9 @@
         this._checkFullScreenAutoChanges(this.opened, this.isInProgress)
       },
 
-      _onParticipantAudioDisabledChanged: function (ev, detail) {
+      _onParticipantAudioDisabledChanged: function (ev) {
+        var detail = ev.detail || {}
+
         if (ev.target.isLocal) {
           this.localAudioDisabled = detail.value
         } else {
@@ -917,7 +927,9 @@
         }
       },
 
-      _onParticipantVideoDisabledChanged: function (ev, detail) {
+      _onParticipantVideoDisabledChanged: function (ev) {
+        var detail = ev.detail || {}
+
         if (ev.target.isLocal) {
           this.localVideoDisabled = detail.value
         } else {

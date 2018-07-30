@@ -80,11 +80,20 @@
       },
 
       attached: function () {
-        this.fire('twilio-video-participant-gui-attached', {element: this})
+        this.dispatchEvent(new CustomEvent(
+          'twilio-video-participant-gui-attached',
+          {
+            detail: {
+              element: this
+            },
+            bubbles: true,
+            composed: true
+          }
+        ))
       },
 
       _handleParticipantChanged: function (participant, oldParticipant) {
-        console.log('[twilio-video-participant-gui] handleParticipantChanged')
+        // console.log('[twilio-video-participant-gui] handleParticipantChanged')
         if (participant) {
           this._setupListeners(participant)
           this._mountTracks(participant.tracks)
@@ -96,20 +105,20 @@
       },
 
       _onDisconnected: function (participant) {
-        console.log('[twilio-video-participant-gui] participant disconnected:', participant)
+        // console.log('[twilio-video-participant-gui] participant disconnected:', participant)
         participant.removeAllListeners()
         this._unmountTracks(participant.tracks)
       },
 
       _onTrackAdded: function (track) {
-        console.log('[twilio-video-participant-gui] track added', track)
-        console.log(track)
+        // console.log('[twilio-video-participant-gui] track added', track)
+        // console.log(track)
         this._mountTracks([track])
       },
 
       _onTrackRemoved: function (track) {
-        console.log('[twilio-video-participant-gui] track removed', track)
-        console.log(track)
+        // console.log('[twilio-video-participant-gui] track removed', track)
+        // console.log(track)
         this._unmountTracks([track])
       },
 
@@ -125,7 +134,7 @@
       },
 
       _setupListeners: function (participant) {
-        console.log('[twilio-video-participant-gui] setting listeners', participant)
+        // console.log('[twilio-video-participant-gui] setting listeners', participant)
         participant.on('trackAdded', this._onTrackAdded.bind(this))
         participant.on('trackRemoved', this._onTrackRemoved.bind(this))
         participant.on('trackEnabled', this._onTrackEnableChanged.bind(this))
@@ -135,7 +144,7 @@
 
       _mountTracks: function (tracks) {
         tracks.forEach(function (track) {
-          console.log('[twilio-video-participant-gui] mounting track', track)
+          // console.log('[twilio-video-participant-gui] mounting track', track)
 
           Polymer.dom(this.root).appendChild(track.attach())
         }, this)
@@ -143,7 +152,7 @@
 
       _unmountTracks: function (tracks) {
         tracks.forEach(function (track) {
-          console.log('[twilio-video-participant-gui] unmounting track', track)
+          // console.log('[twilio-video-participant-gui] unmounting track', track)
           track.detach().forEach(function (detachedEl) {
             detachedEl.remove()
           })
