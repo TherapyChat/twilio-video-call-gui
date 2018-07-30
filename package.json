@@ -1,6 +1,6 @@
 {
   "name": "@therapychat/twilio-video-call-gui",
-  "version": "2.2.1",
+  "version": "3.0.2",
   "description": "Polymer Element of Twilio Video Overlay GUI",
   "main": "twilio-video-call-gui.html",
   "scripts": {
