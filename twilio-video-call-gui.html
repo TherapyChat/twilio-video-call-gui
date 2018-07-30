@@ -11,6 +11,7 @@
 
 <link rel="import" href="../time-counter/time-counter.html">
 
+<link rel="import" href="twilio-video-call-icons-behavior.html">
 <link rel="import" href="twilio-video-toggle-button.html">
 <link rel="import" href="twilio-video-participant-gui.html">
 
@@ -531,7 +532,7 @@
           participant="{{participant}}"
           is-local="{{participant.isLocal}}"
           full-screen$="{{_computeParticipantFullScreen(participant, fullScreenParticipant)}}"
-          on-tap="_onTapMedia"
+          on-click="_onClickMedia"
           on-has-audio-disabled-changed="_onParticipantAudioDisabledChanged"
           on-has-video-disabled-changed="_onParticipantVideoDisabledChanged"
         >
@@ -565,23 +566,27 @@
           hidden$="[[!localVideoDisabled]]"
         >Has apagado tu cámara</div>
         <twilio-video-toggle-button
-          active-icon-src="[[enabledVideoIcon]]"
-          inactive-icon-src="[[disabledVideoIcon]]"
+          icon-active-icon="[[iconVideoEnabledIcon]]"
+          icon-active-src="[[iconVideoEnabledSrc]]"
+          icon-inactive-icon="[[iconVideoDisabledIcon]]"
+          icon-inactive-src="[[iconVideoDisabledSrc]]"
           active="[[!localVideoDisabled]]"
           hidden$="[[!isInProgress]]"
-          on-tap="_onTapVideoToggleButton"
+          on-click="_onClickVideoToggleButton"
         ></twilio-video-toggle-button>
       </div>
       <paper-icon-button
         class="actions__action-button actions__hang-up"
-        src="[[hangUpIcon]]"
-        on-tap="_onTapHangUp"
+        icon="[[iconHangUpIcon]]"
+        src="[[iconHangUpSrc]]"
+        on-click="_onClickHangUp"
         disabled$="[[disabled]]"
       ></paper-icon-button>
       <paper-icon-button
         class="actions__action-button actions__pick-up"
-        src="[[pickUpIcon]]"
-        on-tap="_onTapPickUp"
+        icon="[[iconPickUpIcon]]"
+        src="[[iconPickUpSrc]]"
+        on-click="_onClickPickUp"
         hidden$="[[_computePickUpButtonHidden(isIncomingCall, isInProgress)]]"
         disabled$="[[disabled]]"
       ></paper-icon-button>
@@ -590,19 +595,23 @@
           hidden$="[[!localAudioDisabled]]"
         >Has silenciado el micrófono</div>
         <twilio-video-toggle-button
-          active-icon-src="[[enabledAudioIcon]]"
-          inactive-icon-src="[[disabledAudioIcon]]"
+          icon-active-icon="[[iconAudioEnabledIcon]]"
+          icon-active-src="[[iconAudioEnabledSrc]]"
+          icon-inactive-icon="[[iconAudioDisabledIcon]]"
+          icon-inactive-src="[[iconAudioDisabledSrc]]"
           active="[[!localAudioDisabled]]"
           hidden$="[[!isInProgress]]"
-          on-tap="_onTapAudioToggleButton"
+          on-click="_onClickAudioToggleButton"
         ></twilio-video-toggle-button>
       </div>
       <twilio-video-toggle-button
-        active-icon-src="[[maximizeIcon]]"
-        inactive-icon-src="[[minimizeIcon]]"
+        icon-active-icon="[[iconMaximizeIcon]]"
+        icon-active-src="[[iconMaximizeSrc]]"
+        icon-inactive-icon="[[iconMinimizeIcon]]"
+        icon-inactive-src="[[iconMinimizeSrc]]"
         active="[[minimized]]"
         hidden$="[[!isInProgress]]"
-        on-tap="_onTapMinimizeToggleButton"
+        on-click="_onClickMinimizeToggleButton"
       ></twilio-video-toggle-button>
     </div>
 
@@ -612,7 +621,8 @@
       is: 'twilio-video-call-gui',
 
       behaviors: [
-        Polymer.IronOverlayBehavior
+        Polymer.IronOverlayBehavior,
+        Polymer.TwilioVideoCallIconsBehavior
       ],
 
       properties: {
@@ -621,27 +631,7 @@
           value: false,
           reflectToAttribute: true
         },
-        disabledAudioIcon: {
-          type: String,
-          value: 'av:mic-off'
-        },
-        disabledVideoIcon: {
-          type: String,
-          value: 'av:videocam-off'
-        },
-        enabledAudioIcon: {
-          type: String,
-          value: 'av:mic'
-        },
-        enabledVideoIcon: {
-          type: String,
-          value: 'av:videocam'
-        },
         fullScreenParticipant: Object,
-        hangUpIcon: {
-          type: String,
-          value: 'communication:call-end'
-        },
         hideGui: {
           type: Boolean,
           value: false,
@@ -668,20 +658,12 @@
           type: Boolean,
           value: false
         },
-        maximizeIcon: {
-          type: String,
-          value: 'icons:fullscreen'
-        },
         minimized: {
           type: Boolean,
           notify: true,
           value: false,
           reflectToAttribute: true,
           observer: '_handleMinimizedChanged'
-        },
-        minimizeIcon: {
-          type: String,
-          value: 'icons:fullscreen-exit'
         },
         noCancelOnEscKey: {
           type: Boolean,
@@ -695,10 +677,6 @@
           type: Boolean,
           value: false,
           reflectToAttribute: true
-        },
-        pickUpIcon: {
-          type: String,
-          value: 'communication:call'
         },
         participants: {
           type: Array,
@@ -747,17 +725,49 @@
         this.removeEventListener('iron-resize', this._onIronResize)
       },
 
-      pickUp: function () {
-        this.fire('video-call-pick-up', {
-          roomName: this.roomName
-        })
+      hangUp: function () {
+        this.dispatchEvent(new CustomEvent('twilio-video-hang-up', {
+          detail: {
+            roomName: this.roomName,
+            rejected: !this.isInProgress && this.isIncomingCall
+          },
+          bubbles: true,
+          composed: true
+        }))
       },
 
-      hangUp: function () {
-        this.fire('video-call-hang-up', {
-          roomName: this.roomName,
-          rejected: !this.isInProgress && this.isIncomingCall
-        })
+      pickUp: function () {
+        this.dispatchEvent(new CustomEvent('twilio-video-pick-up', {
+          detail: {
+            roomName: this.roomName
+          },
+          bubbles: true,
+          composed: true
+        }))
+      },
+
+      toggleGui: function () {
+        this.hideGui = !this.hideGui
+      },
+
+      toggleLocalAudio: function () {
+        var participant = this._getLocalParticipant()
+
+        if (participant) {
+          participant.audioTracks.forEach(
+            track => track.enable(this.localAudioDisabled)
+          )
+        }
+      },
+
+      toggleLocalVideo: function () {
+        var participant = this._getLocalParticipant()
+
+        if (participant) {
+          participant.videoTracks.forEach(
+            track => track.enable(this.localVideoDisabled)
+          )
+        }
       },
 
       _computeParticipantFullScreen: function (participant, fullScreenParticipant) {
@@ -767,16 +777,18 @@
       _checkFullScreenAutoChanges: function (opened, isInProgress) {
         if (opened) {
           var participants = this.participants || []
-
-          this.$.fullScreenSelector.select(
-            participants.find(function (participant) {
-              return (this.isInProgress
-                ? !participant.isLocal
-                : participant.isLocal
-              )
-            }.bind(this))
+          var participantForFullScreen = participants.find(
+            participant => this.isInProgress
+              ? !participant.isLocal
+              : participant.isLocal
           )
+
+          this.$.fullScreenSelector.select(participantForFullScreen)
         }
+      },
+
+      _getLocalParticipant: function () {
+        return this.participants.find(participant => participant.isLocal)
       },
 
       _handleMinimizedChanged: function (minimized) {
@@ -819,16 +831,16 @@
 
       _setupRoom: function (room) {
         if (room) {
-          console.log('[twilio-video-call-gui] setting up room', room)
+          // console.log('[twilio-video-call-gui] setting up room', room)
           room.on('disconnected', this._onRoomDisconnected.bind(this))
           room.on('participantConnected', this._onParticipantConnected.bind(this))
           room.on('participantDisconnected', this._onParticipantDisconnected.bind(this))
 
           room.localParticipant.isLocal = true
           this._onParticipantConnected(room.localParticipant)
-          room.participants.forEach(function (participant) {
-            this._onParticipantConnected(participant)
-          }.bind(this))
+          room.participants.forEach(
+            participant => this._onParticipantConnected(participant)
+          )
         }
       },
 
@@ -837,18 +849,18 @@
       _onRoomDisconnected: function (room, err) {
         if (err) console.error('[twilio-video-call-gui] room disconnect error', err)
 
-        console.log('[twilio-video-call-gui] room disconnected', room)
+        // console.log('[twilio-video-call-gui] room disconnected', room)
         this._resetGui()
         room.removeAllListeners()
       },
 
       _onParticipantConnected: function (participant) {
-        console.log('[twilio-video-call-gui] participant connected', participant)
+        // console.log('[twilio-video-call-gui] participant connected', participant)
         this.push('participants', participant)
       },
 
       _onParticipantDisconnected: function (participant) {
-        console.log('[twilio-video-call-gui] participant disconnected', participant)
+        // console.log('[twilio-video-call-gui] participant disconnected', participant)
         var indexOfParticipants = this.participants.indexOf(participant)
 
         if (indexOfParticipants > -1) {
@@ -857,6 +869,39 @@
       },
 
       // Events Callbacks
+
+      _onClickAudioToggleButton: function (ev) {
+        this.toggleLocalAudio()
+      },
+
+      _onClickMinimizeToggleButton: function (ev) {
+        this.minimized = !this.minimized
+        this.withBackdrop = !this.minimized
+      },
+
+      _onClickVideoToggleButton: function (ev) {
+        this.toggleLocalVideo()
+      },
+
+      _onClickHangUp: function (ev) {
+        this.hangUp()
+      },
+
+      _onClickMedia: function (ev) {
+        var tapedEl = ev.currentTarget
+
+        if (this.isInProgress) {
+          if (tapedEl.hasAttribute('full-screen')) {
+            this.toggleGui()
+          } else {
+            this._setMediaFullScreen(tapedEl)
+          }
+        }
+      },
+
+      _onClickPickUp: function (ev) {
+        this.pickUp()
+      },
 
       _onIronResize: function () {
         // ensures correct layout with phone keyboard changes
@@ -872,7 +917,9 @@
         this._checkFullScreenAutoChanges(this.opened, this.isInProgress)
       },
 
-      _onParticipantAudioDisabledChanged: function (ev, detail) {
+      _onParticipantAudioDisabledChanged: function (ev) {
+        var detail = ev.detail || {}
+
         if (ev.target.isLocal) {
           this.localAudioDisabled = detail.value
         } else {
@@ -880,61 +927,14 @@
         }
       },
 
-      _onParticipantVideoDisabledChanged: function (ev, detail) {
+      _onParticipantVideoDisabledChanged: function (ev) {
+        var detail = ev.detail || {}
+
         if (ev.target.isLocal) {
           this.localVideoDisabled = detail.value
         } else {
           this.remoteVideoDisabled = detail.value
         }
-      },
-
-      _onTapAudioToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.audioTracks.forEach(function (track) {
-            track.enable(this.localAudioDisabled)
-          }.bind(this))
-        }
-      },
-
-      _onTapMinimizeToggleButton: function (ev, detail) {
-        this.minimized = !this.minimized
-        this.withBackdrop = !this.minimized
-      },
-
-      _onTapVideoToggleButton: function (ev, detail) {
-        var participant = this.participants.find(function (participant) {
-          return participant.isLocal
-        })
-
-        if (participant) {
-          participant.videoTracks.forEach(function (track) {
-            track.enable(this.localVideoDisabled)
-          }.bind(this))
-        }
-      },
-
-      _onTapHangUp: function (ev, detail) {
-        this.hangUp()
-      },
-
-      _onTapMedia: function (ev, detail) {
-        var tapedEl = ev.currentTarget
-
-        if (this.isInProgress) {
-          if (tapedEl.hasAttribute('full-screen')) {
-            this.hideGui = !this.hideGui
-          } else {
-            this._setMediaFullScreen(tapedEl)
-          }
-        }
-      },
-
-      _onTapPickUp: function (ev, detail) {
-        this.pickUp()
       },
 
       // Computed Callbacks
